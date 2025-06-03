@@ -1,51 +1,181 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "94589871-ac31-4a67-8fc2-e63f3e502b50",
+  "id": "2e3bd40c-0f0b-49b1-86db-f0adc99a6c43",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "users_table": {
-      "name": "users_table",
+    "grupos": {
+      "name": "grupos",
       "columns": {
-        "id": {
-          "name": "id",
+        "id_grupo": {
+          "name": "id_grupo",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
         },
-        "name": {
-          "name": "name",
+        "nombre": {
+          "name": "nombre",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "age": {
-          "name": "age",
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'#0078D7'"
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "subtareas": {
+      "name": "subtareas",
+      "columns": {
+        "id_subtarea": {
+          "name": "id_subtarea",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "id_tarea": {
+          "name": "id_tarea",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "email": {
-          "name": "email",
+        "titulo": {
+          "name": "titulo",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "completada": {
+          "name": "completada",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
         }
       },
-      "indexes": {
-        "users_table_email_unique": {
-          "name": "users_table_email_unique",
-          "columns": [
-            "email"
+      "indexes": {},
+      "foreignKeys": {
+        "subtareas_id_tarea_tareas_id_tarea_fk": {
+          "name": "subtareas_id_tarea_tareas_id_tarea_fk",
+          "tableFrom": "subtareas",
+          "tableTo": "tareas",
+          "columnsFrom": [
+            "id_tarea"
           ],
-          "isUnique": true
+          "columnsTo": [
+            "id_tarea"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
-      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "tareas": {
+      "name": "tareas",
+      "columns": {
+        "id_tarea": {
+          "name": "id_tarea",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "id_grupo": {
+          "name": "id_grupo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "completada": {
+          "name": "completada",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "fecha_vencimiento": {
+          "name": "fecha_vencimiento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "prioridad": {
+          "name": "prioridad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'baja'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tareas_id_grupo_grupos_id_grupo_fk": {
+          "name": "tareas_id_grupo_grupos_id_grupo_fk",
+          "tableFrom": "tareas",
+          "tableTo": "grupos",
+          "columnsFrom": [
+            "id_grupo"
+          ],
+          "columnsTo": [
+            "id_grupo"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

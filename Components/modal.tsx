@@ -8,70 +8,81 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import ColorPickerComponent from "../Components/ColorPicker";
 interface Props {
   modalVisible: boolean;
   onClose: () => void;
-  onSave: (userData: UserData) => Promise<void>;
-  onUpdate?: (userData: UserData) => Promise<UserData[]>;
-  initialUser?: UserData;
+  onSave: (GroupData: GroupData) => Promise<void>;
+  onUpdate?: (GroupData: GroupData) => Promise<GroupData[]>;
+  initialgrupo?: GroupData;
 }
-interface UserData {
-  id: string;
-  name: string;
-  age: string;
-  email: string;
+interface GroupData {
+  id_grupo: number;
+  nombre: string;
+  color: string | null;
+  fecha_creacion: string | null;
 }
+
 export const ModalGuardar = ({
   modalVisible,
   onClose,
   onSave,
   onUpdate,
-  initialUser,
+  initialgrupo,
 }: Props) => {
-  const [user, setUser] = useState<UserData>({
-    id: "",
-    name: "",
-    age: "",
-    email: "",
+  const [grupo, setgrupo] = useState<GroupData>({
+    id_grupo: 0,
+    nombre: "",
+    color: "",
+    fecha_creacion: "",
   });
   useEffect(() => {
-    if (modalVisible && initialUser) {
-      setUser(initialUser);
+    if (modalVisible && initialgrupo) {
+      setgrupo(initialgrupo);
     } else if (!modalVisible) {
-      setUser({
-        id: "",
-        name: "",
-        age: "",
-        email: "",
-      });
+      resetForm();
     }
-  }, [modalVisible, initialUser]); // Dependencias del efecto
-  const handleOnChange = (campo: keyof UserData, valor: string) => {
-    setUser((prev) => ({
+  }, [modalVisible, initialgrupo]); // Dependencias del efecto
+  const handleOnChange = (campo: keyof GroupData, valor: string) => {
+    setgrupo((prev) => ({
       ...prev,
       [campo]: valor,
     }));
   };
-  const validation = (user: UserData) => {
-    if (user.name === "" || user.age === "" || user.email === "") {
+  const validation = (group: GroupData) => {
+    if (
+      group.nombre === "" ||
+      group.color === "" ||
+      group.fecha_creacion === ""
+    ) {
       const missingField =
-        user.name === "" ? "nombre" : user.age === "" ? "edad" : "email";
+        group.nombre === ""
+          ? "nombre"
+          : group.color === ""
+          ? "color"
+          : "fecha_creacion";
       Alert.alert("Error", `El campo ${missingField} es obligatorio`);
       return false;
     }
     return true;
   };
-  const handleActions = (accion: string, user: UserData) => {
+  const handleChageColor = (color: string) => {
+    setgrupo((prev) => ({
+      ...prev,
+      color: color,
+    }));
+  };
+  const handleActions = (accion: string, grupo: GroupData) => {
     switch (accion) {
       case "save":
-        if (!validation(user)) return;
-        onSave(user);
+        if (!validation(grupo)) return;
+        onSave(grupo);
         resetForm();
         onClose();
         break;
       case "update":
-        if (!validation(user)) return;
-        if (onUpdate) onUpdate(user);
+        if (!validation(grupo)) return;
+        if (onUpdate) onUpdate(grupo);
         else console.log("No se puede actualizar");
         resetForm();
         onClose();
@@ -91,71 +102,59 @@ export const ModalGuardar = ({
     }
   };
   const resetForm = () => {
-    setUser({
-      id: "",
-      name: "",
-      age: "",
-      email: "",
+    setgrupo({
+      id_grupo: 0,
+      nombre: "",
+      color: "",
+      fecha_creacion: "",
     });
   };
+
   return (
     <Modal
       animationType="slide"
       transparent={true}
       visible={modalVisible}
       onRequestClose={() => {
-        Alert.alert("Modal has been closed.");
+        handleActions("cancel", grupo);
       }}
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Registrar Usuario</Text>
+          <Text style={styles.modalTitle}>
+            {initialgrupo ? "Editar Grupo" : "Crear Grupo"}
+          </Text>
 
           <TextInput
             style={styles.input}
-            onChangeText={(text) => handleOnChange("name", text)}
-            value={user.name}
-            placeholder="Nombre completo"
+            onChangeText={(text) => handleOnChange("nombre", text)}
+            value={grupo.nombre}
+            placeholder="Nombre del Grupo"
             placeholderTextColor="#999"
           />
-
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => handleOnChange("age", text)}
-            keyboardType="numeric"
-            maxLength={2}
-            value={user.age.toString()}
-            placeholder="Edad"
-            placeholderTextColor="#999"
-          />
-
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => handleOnChange("email", text)}
-            keyboardType="email-address"
-            value={user.email}
-            placeholder="Correo electrónico"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-          />
-
+          <View style={styles.colorPickerWrapper}>
+            <ColorPickerComponent
+              onColorSelected={handleChageColor}
+              initialColor={grupo.color || "#3498db"}
+            />
+          </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.buttonSave]}
               onPress={() =>
-                initialUser
-                  ? handleActions("update", user)
-                  : handleActions("save", user)
+                initialgrupo
+                  ? handleActions("update", grupo)
+                  : handleActions("save", grupo)
               }
             >
               <Text style={styles.buttonText}>
-                {initialUser ? "Actualizar" : "Guardar"}
+                {initialgrupo ? "Actualizar" : "Guardar"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, styles.buttonCancel]}
-              onPress={() => handleActions("cancel", user)}
+              onPress={() => handleActions("cancel", grupo)}
             >
               <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
@@ -165,7 +164,6 @@ export const ModalGuardar = ({
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
@@ -174,7 +172,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalView: {
-    width: "80%",
+    width: "85%",
     backgroundColor: "white",
     borderRadius: 20,
     padding: 25,
@@ -204,10 +202,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: "#f9f9f9",
   },
+  colorPickerWrapper: {
+    marginBottom: 15,
+    alignItems: "center", // Centra el color picker horizontalmente
+  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: 15, // Aumenté el margen superior
   },
   button: {
     borderRadius: 10,

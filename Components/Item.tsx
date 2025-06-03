@@ -2,68 +2,60 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../theme/colors";
-type Item = {
+
+type ItemProps = {
   elemento: {
-    id: string;
-    name: string;
-    age: string;
-    email: string;
+    id_grupo: number;
+    nombre: string;
+    color: string | null;
+    fecha_creacion: string | null;
   };
 };
+
 interface Actions {
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (userData: Item["elemento"]) => void;
+  onUpdate: (userData: ItemProps["elemento"]) => void;
 }
+
 export const Item = ({
   elemento,
   onDelete,
   onUpdate,
-}: { elemento: Item["elemento"] } & Actions) => {
+}: { elemento: ItemProps["elemento"] } & Actions) => {
   return (
     <View style={styles.cardContainer}>
-      <View style={styles.card}>
-        {/* Información del usuario en grid */}
-        <View style={styles.infoGrid}>
-          <View style={styles.infoColumn}>
-            <Text style={styles.label}>Nombre:</Text>
-            <Text style={styles.value}>{elemento.name}</Text>
-          </View>
-
-          <View style={styles.infoColumn}>
-            <Text style={styles.label}>Edad:</Text>
-            <Text style={styles.value}>{elemento.age}</Text>
-          </View>
-
-          <View style={[styles.infoColumn, styles.fullWidth]}>
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
-              {elemento.email}
-            </Text>
-          </View>
+      <View style={[styles.card, { backgroundColor: elemento.color }]}>
+        {/* Información principal */}
+        <View style={styles.taskButton}>
+          <Text style={styles.taskButtonText}>{elemento.nombre}</Text>
+          {elemento.fecha_creacion && (
+            <Text style={styles.taskButtonText}>{elemento.fecha_creacion}</Text>
+          )}
         </View>
-        <View>
-          <Link href="/task" style={styles.link}>
-            Ver tareas
+
+        {/* Acciones */}
+        <View style={styles.actionsRow}>
+          <Link href={`../task/${elemento.id_grupo}`} asChild>
+            <TouchableOpacity style={styles.taskButton}>
+              <Text style={styles.taskButtonText}>Tareas</Text>
+            </TouchableOpacity>
           </Link>
-        </View>
 
-        {/* Botones de acciones */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.deleteButton]}
-            onPress={() => onDelete(elemento.id)}
-          >
-            <Ionicons name="trash-outline" size={18} color="white" />
-            <Text style={styles.buttonText}>Eliminar</Text>
-          </TouchableOpacity>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.iconButton, styles.editButton]}
+              onPress={() => onUpdate(elemento)}
+            >
+              <Ionicons name="create-outline" size={18} color="white" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.editButton]}
-            onPress={() => onUpdate(elemento)}
-          >
-            <Ionicons name="create-outline" size={18} color="white" />
-            <Text style={styles.buttonText}>Editar</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.iconButton, styles.deleteButton]}
+              onPress={() => onDelete(elemento.id_grupo.toString())}
+            >
+              <Ionicons name="trash-outline" size={18} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -85,56 +77,50 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  infoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  mainInfo: {
     marginBottom: 16,
   },
-  infoColumn: {
-    width: "50%",
-    marginBottom: 12,
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 4,
   },
-  fullWidth: {
-    width: "100%",
-  },
-  label: {
-    fontSize: 12,
+  date: {
+    fontSize: 13,
     color: colors.textSecondary,
-    marginBottom: 2,
   },
-  value: {
+  actionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  taskButton: {
+    backgroundColor: colors.primaryLight,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  taskButtonText: {
+    color: "white",
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
-  actionsContainer: {
+  actionButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
     gap: 8,
   },
-  link: {
-    paddingTop: 20,
-    fontSize: 20,
-  },
-  button: {
-    flexDirection: "row",
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    minWidth: 100,
-  },
-  deleteButton: {
-    backgroundColor: colors.error,
   },
   editButton: {
     backgroundColor: colors.primary,
   },
-  buttonText: {
-    color: "white",
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "500",
+  deleteButton: {
+    backgroundColor: colors.error,
   },
 });
