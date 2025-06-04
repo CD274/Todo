@@ -22,38 +22,51 @@ export const Item = ({
   onDelete,
   onUpdate,
 }: { elemento: ItemProps["elemento"] } & Actions) => {
+  const cardBackground = elemento.color || colors.primaryLight;
+
   return (
     <View style={styles.cardContainer}>
-      <View style={[styles.card, { backgroundColor: elemento.color }]}>
-        {/* Información principal */}
-        <View style={styles.taskButton}>
-          <Text style={styles.taskButtonText}>{elemento.nombre}</Text>
+      <View style={[styles.card, { backgroundColor: cardBackground }]}>
+        {/* Main content */}
+        <View style={styles.content}>
+          <Text style={[styles.name]} numberOfLines={1}>
+            {elemento.nombre}
+          </Text>
+
           {elemento.fecha_creacion && (
-            <Text style={styles.taskButtonText}>{elemento.fecha_creacion}</Text>
+            <Text style={[styles.date]}>
+              {formatDate(elemento.fecha_creacion)}
+            </Text>
           )}
         </View>
 
-        {/* Acciones */}
-        <View style={styles.actionsRow}>
+        {/* Actions */}
+        <View style={styles.actionsContainer}>
           <Link href={`../task/${elemento.id_grupo}`} asChild>
-            <TouchableOpacity style={styles.taskButton}>
-              <Text style={styles.taskButtonText}>Tareas</Text>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.primary }]}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.buttonText}>View Tasks</Text>
+              <Ionicons name="chevron-forward" size={16} color="white" />
             </TouchableOpacity>
           </Link>
 
-          <View style={styles.actionButtons}>
+          <View style={styles.iconButtons}>
             <TouchableOpacity
               style={[styles.iconButton, styles.editButton]}
               onPress={() => onUpdate(elemento)}
+              activeOpacity={0.7}
             >
-              <Ionicons name="create-outline" size={18} color="white" />
+              <Ionicons name="create-outline" size={20} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.iconButton, styles.deleteButton]}
               onPress={() => onDelete(elemento.id_grupo.toString())}
+              activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={18} color="white" />
+              <Ionicons name="trash-outline" size={20} color="white" />
             </TouchableOpacity>
           </View>
         </View>
@@ -62,60 +75,78 @@ export const Item = ({
   );
 };
 
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
 const styles = StyleSheet.create({
   cardContainer: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
   },
   card: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 3,
+    overflow: "hidden",
   },
-  mainInfo: {
+  content: {
     marginBottom: 16,
   },
   name: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 4,
   },
   date: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 14,
+    opacity: 0.9,
   },
-  actionsRow: {
+  actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  taskButton: {
-    backgroundColor: colors.primaryLight,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  taskButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  actionButtons: {
+  button: {
     flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    minWidth: 120,
+    justifyContent: "center",
     gap: 8,
   },
+  buttonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  iconButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   editButton: {
     backgroundColor: colors.primary,
