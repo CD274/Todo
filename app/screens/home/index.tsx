@@ -86,12 +86,12 @@ const Home = () => {
   const handleModal = () => {
     setModalVisible(!isModalVisible);
   };
-  const saveData = async (nuevoGrupo: GroupData) => {
+  const saveData = async (data: GroupData) => {
     const result = await db
       .insert(grupos)
       .values({
-        nombre: nuevoGrupo.nombre,
-        color: nuevoGrupo.color,
+        nombre: data.nombre,
+        color: data.color,
         fecha_creacion: new Date().toISOString(),
       })
       .returning();

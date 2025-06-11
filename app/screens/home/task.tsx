@@ -67,6 +67,57 @@ const Task = () => {
       loadData();
     }, [])
   );
+  const saveData = async (nuevaTarea: TaskProps) => {
+    const result = await db
+      .insert(tareas)
+      .values({
+        id_grupo: id_group,
+        titulo: nuevaTarea.titulo,
+        descripcion: nuevaTarea.descripcion,
+        completada: nuevaTarea.completada,
+        fecha_creacion: new Date().toISOString(),
+        fecha_vencimiento: nuevaTarea.fecha_vencimiento,
+        prioridad: nuevaTarea.prioridad,
+      })
+      .returning();
+    if (result.length === 0) {
+      console.log("No se pudo guardar la tarea");
+      return;
+    }
+
+    setData((prev) => [
+      ...prev,
+      {
+        id_tarea: result[0].id_tarea,
+        id_grupo: result[0].id_grupo,
+        titulo: result[0].titulo,
+        descripcion: result[0].descripcion,
+        completada: result[0].completada,
+        fecha_creacion: result[0].fecha_creacion,
+        fecha_vencimiento: result[0].fecha_vencimiento,
+        prioridad: result[0].prioridad,
+      },
+    ]);
+  };
+  const updateData = async (nuevaTarea: TaskProps) => {
+    const result = await db
+      .update(tareas)
+      .set({
+        titulo: nuevaTarea.titulo,
+        descripcion: nuevaTarea.descripcion,
+        completada: nuevaTarea.completada,
+        fecha_creacion: nuevaTarea.fecha_creacion,
+        fecha_vencimiento: nuevaTarea.fecha_vencimiento,
+        prioridad: nuevaTarea.prioridad,
+      })
+      .where(eq(tareas.id_tarea, Number(nuevaTarea.id_tarea)))
+      .returning();
+    setData((prev) =>
+      prev.map((item) =>
+        item.id_tarea === nuevaTarea.id_tarea ? result[0] : item
+      )
+    );
+  };
   const deleteData = async (id: number) => {
     const result = await db
       .delete(tareas)
@@ -77,11 +128,15 @@ const Task = () => {
   const handleModal = () => {
     setModalVisible(!isModalVisible);
   };
+  const handleUpdate = (tarea: TaskProps) => {
+    setEditingTask(tarea);
+    setModalVisible(true);
+  };
   const renderItem = ({ item }: { item: TaskProps }) => (
     <Item
       elemento={{ ...item, tipo: "tarea" }}
       onDelete={() => deleteData(item.id_tarea)}
-      onUpdate={() => {}}
+      onUpdate={() => handleUpdate(item)}
     />
   );
   return (
@@ -90,11 +145,10 @@ const Task = () => {
         <Ionicons name="add-circle" size={24} color="white" />
         <Text style={styles.addButtonText}>Crear un grupo de tareas</Text>
       </TouchableOpacity>
-      <Text>Task in de case del goupid {id_group}</Text>
       <FlatList
         data={data}
         renderItem={({ item }: { item: TaskProps }) => renderItem({ item })}
-        keyExtractor={(item) => item.id_grupo.toString()}
+        keyExtractor={(item) => item.id_tarea.toString()}
       />
       <ModalGuardar
         modalVisible={isModalVisible}
@@ -103,6 +157,9 @@ const Task = () => {
           setModalVisible(false);
           setEditingTask(undefined);
         }}
+        onSave={saveData}
+        onUpdate={updateData}
+        initialTarea={editingTask}
       />
     </View>
   );

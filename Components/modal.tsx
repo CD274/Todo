@@ -11,14 +11,24 @@ import {
   View,
 } from "react-native";
 import ColorPickerComponent from "../Components/ColorPicker";
-interface Props {
+
+interface BaseModalProps {
   modalVisible: boolean;
-  tipo: "grupo" | "tarea";
   onClose: () => void;
-  onSave: (GroupData: GroupData) => Promise<void>;
-  onUpdate?: (GroupData: GroupData) => Promise<GroupData[]>;
+}
+
+interface GroupModalProps extends BaseModalProps {
+  tipo: "grupo";
+  onSave: (data: GroupData) => Promise<void>;
+  onUpdate?: (data: GroupData) => Promise<GroupData[]>;
   initialgrupo?: GroupData;
-  initialtarea?: TaskProps;
+}
+
+interface TaskModalProps extends BaseModalProps {
+  tipo: "tarea";
+  onSave: (data: TaskProps) => Promise<void>;
+  onUpdate?: (data: TaskProps) => Promise<TaskProps[]>;
+  initialTarea?: TaskProps;
 }
 interface GroupData {
   id_grupo: number;
@@ -36,16 +46,8 @@ interface TaskProps {
   fecha_vencimiento: string | null;
   prioridad: "baja" | "media" | "alta" | null;
 }
-
-export const ModalGuardar = ({
-  modalVisible,
-  tipo,
-  onClose,
-  onSave,
-  onUpdate,
-  initialgrupo,
-  initialtarea,
-}: Props) => {
+type Props = GroupModalProps | TaskModalProps;
+export const ModalGuardar = (props: Props) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [grupo, setgrupo] = useState<GroupData>({
     id_grupo: 0,
@@ -72,35 +74,62 @@ export const ModalGuardar = ({
   });
 
   useEffect(() => {
-    if (modalVisible && initialtarea) {
-      settarea(initialtarea);
-    } else if (modalVisible && initialgrupo) {
-      setgrupo(initialgrupo);
-    } else if (!modalVisible) {
+    if (props.modalVisible) {
+      if (props.tipo === "tarea" && props.initialTarea) {
+        settarea(props.initialTarea);
+      } else if (props.tipo === "grupo" && props.initialgrupo) {
+        setgrupo(props.initialgrupo);
+      }
+    } else {
       resetForm();
     }
-  }, [modalVisible, initialgrupo, initialtarea]);
+  }, [props.modalVisible, props.initialgrupo, props.initialTarea, props.tipo]);
+
   const handleOnChange = (
     campo: keyof (GroupData | TaskProps),
     valor: string | Date | boolean | "baja" | "media" | "alta"
   ) => {
-    if (tipo === "tarea") {
-      // Manejo especial para fechas
-      if (campo === "fecha_vencimiento" && valor instanceof Date) {
-        settarea((prev) => ({ ...prev, [campo]: formatDateToString(valor) }));
+    if (props.tipo === "tarea") {
+      const campoTarea = campo as keyof TaskProps;
+      if (campoTarea === "fecha_vencimiento" && valor instanceof Date) {
+        settarea((prev) => ({
+          ...prev,
+          [campoTarea]: formatDateToString(valor),
+        }));
       } else {
-        settarea((prev) => ({ ...prev, [campo]: valor }));
+        settarea((prev) => ({ ...prev, [campoTarea]: valor }));
       }
-    } else if (tipo === "grupo") {
+    } else if (props.tipo === "grupo") {
       setgrupo((prev) => ({ ...prev, [campo]: valor }));
     }
   };
   const validation = (data: GroupData | TaskProps) => {
-    if (data.nombre === "" || data.color === "") {
-      const missingField =
-        data.nombre === "" ? "nombre" : data.color === "" ? "color" : "";
-      Alert.alert("Error", `El campo ${missingField} es obligatorio`);
-      return false;
+    if (props.tipo === "tarea") {
+      const tarea = data as TaskProps;
+      if (
+        (tarea.titulo === "" || data.fecha_creacion === "",
+        tarea.descripcion === "")
+      ) {
+        const missingField =
+          tarea.titulo === ""
+            ? "titulo"
+            : tarea.descripcion === ""
+            ? "descripcion"
+            : tarea.fecha_creacion === ""
+            ? "fecha_creacion"
+            : "";
+        Alert.alert("Error", `El campo ${missingField} es obligatorio`);
+        return false;
+      }
+    }
+    if (props.tipo === "grupo") {
+      const grupo = data as GroupData;
+      if (grupo.nombre === "" || grupo.color === "") {
+        const missingField =
+          grupo.nombre === "" ? "nombre" : grupo.color === "" ? "color" : "";
+        Alert.alert("Error", `El campo ${missingField} es obligatorio`);
+        return false;
+      }
     }
     return true;
   };
@@ -110,40 +139,65 @@ export const ModalGuardar = ({
       color: color,
     }));
   };
-  const handleActions = (
-    accion: string,
-    grupo?: GroupData,
-    tarea?: TaskProps
-  ) => {
+  const handleActions = (accion: string, data?: GroupData | TaskProps) => {
     switch (accion) {
       case "save":
-        if (!validation(grupo)) return;
-        onSave(grupo);
+        if (!validation(data)) return;
+        props.onSave(data);
         resetForm();
-        onClose();
+        props.onClose();
         break;
-      case "update":
-        if (!validation(grupo)) return;
-        if (onUpdate) onUpdate(grupo);
-        else console.log("No se puede actualizar");
-        resetForm();
-        onClose();
 
-        break;
-      case "close": {
-        onClose();
+      case "update":
+        if (!validation(data)) return;
+        if (props.onUpdate) {
+          props.onUpdate(data);
+        } else {
+          console.log("No se puede actualizar");
+        }
         resetForm();
+        props.onClose();
         break;
-      }
+
+      case "close":
       case "cancel":
-        onClose();
+        props.onClose();
         resetForm();
         break;
+
       default:
         break;
     }
   };
+  const getButtonAction = () => {
+    if (props.tipo === "grupo") {
+      return props.initialgrupo
+        ? () => handleActions("update", grupo)
+        : () => handleActions("save", grupo);
+    } else {
+      return props.initialTarea
+        ? () => handleActions("update", tarea)
+        : () => handleActions("save", tarea);
+    }
+  };
+
+  const getButtonText = () => {
+    if (props.tipo === "grupo") {
+      return props.initialgrupo ? "Actualizar" : "Guardar";
+    }
+    return props.initialTarea ? "Actualizar" : "Guardar";
+  };
   const resetForm = () => {
+    settarea({
+      id_tarea: 0,
+      id_grupo: 0,
+      titulo: "",
+      descripcion: "",
+      completada: false,
+      fecha_creacion: "",
+      fecha_vencimiento: formatDateToString(new Date()),
+      prioridad: "baja",
+    });
     setgrupo({
       id_grupo: 0,
       nombre: "",
@@ -155,7 +209,7 @@ export const ModalGuardar = ({
     <Modal
       animationType="slide"
       transparent={true}
-      visible={modalVisible}
+      visible={props.modalVisible}
       onRequestClose={() => {
         handleActions("cancel", grupo);
       }}
@@ -163,16 +217,16 @@ export const ModalGuardar = ({
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>
-            {tipo === "grupo"
-              ? initialgrupo
+            {props.tipo === "grupo"
+              ? props.initialgrupo
                 ? "Editar Grupo"
                 : "Crear Grupo"
-              : initialtarea
+              : props.initialTarea
               ? "Editar Tarea"
               : "Crear Tarea"}
           </Text>
 
-          {tipo === "grupo" && (
+          {props.tipo === "grupo" && (
             <View>
               <View>
                 <TextInput
@@ -191,7 +245,7 @@ export const ModalGuardar = ({
               </View>
             </View>
           )}
-          {tipo === "tarea" && (
+          {props.tipo === "tarea" && (
             <View>
               <TextInput
                 style={styles.input}
@@ -258,15 +312,9 @@ export const ModalGuardar = ({
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.buttonSave]}
-              onPress={() =>
-                initialgrupo
-                  ? handleActions("update", grupo)
-                  : handleActions("save", grupo)
-              }
+              onPress={getButtonAction()}
             >
-              <Text style={styles.buttonText}>
-                {initialgrupo ? "Actualizar" : "Guardar"}
-              </Text>
+              <Text style={styles.buttonText}>{getButtonText()}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
