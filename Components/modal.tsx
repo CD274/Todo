@@ -46,7 +46,6 @@ export const ModalGuardar = ({
   initialgrupo,
   initialtarea,
 }: Props) => {
-  const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [grupo, setgrupo] = useState<GroupData>({
     id_grupo: 0,
@@ -54,9 +53,12 @@ export const ModalGuardar = ({
     color: "",
     fecha_creacion: "",
   });
-  const formatDateToString = (date: Date) => {
-    // Convierte Date a string en formato YYYY-MM-DD (puedes ajustar el formato)
+  const formatDateToString = (date: Date | null): string => {
+    if (!date) return "";
     return date.toISOString().split("T")[0];
+  };
+  const parseStringToDate = (dateString: string | null): Date => {
+    return dateString ? new Date(dateString) : new Date();
   };
   const [tarea, settarea] = useState<TaskProps>({
     id_tarea: 0,
@@ -70,23 +72,28 @@ export const ModalGuardar = ({
   });
 
   useEffect(() => {
-    if (modalVisible && initialgrupo) {
+    if (modalVisible && initialtarea) {
+      settarea(initialtarea);
+    } else if (modalVisible && initialgrupo) {
       setgrupo(initialgrupo);
     } else if (!modalVisible) {
       resetForm();
     }
-  }, [modalVisible, initialgrupo]); // Dependencias del efecto
+  }, [modalVisible, initialgrupo, initialtarea]);
   const handleOnChange = (
     campo: keyof (GroupData | TaskProps),
-    valor: string | Date
+    valor: string | Date | boolean | "baja" | "media" | "alta"
   ) => {
-    if (tipo === "tarea") settarea((prev) => ({ ...prev, [campo]: valor }));
-    else if (tipo === "grupo")
-      setgrupo((prev) => ({
-        ...prev,
-        [campo]: valor,
-      }));
-    setShowDatePicker(false);
+    if (tipo === "tarea") {
+      // Manejo especial para fechas
+      if (campo === "fecha_vencimiento" && valor instanceof Date) {
+        settarea((prev) => ({ ...prev, [campo]: formatDateToString(valor) }));
+      } else {
+        settarea((prev) => ({ ...prev, [campo]: valor }));
+      }
+    } else if (tipo === "grupo") {
+      setgrupo((prev) => ({ ...prev, [campo]: valor }));
+    }
   };
   const validation = (data: GroupData | TaskProps) => {
     if (data.nombre === "" || data.color === "") {
@@ -143,11 +150,6 @@ export const ModalGuardar = ({
       color: "",
       fecha_creacion: "",
     });
-  };
-  const onChange = (event, selectedDate: Date) => {
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
   };
   return (
     <Modal
@@ -209,28 +211,34 @@ export const ModalGuardar = ({
               />
 
               <View style={styles.dateContainer}>
-                <View style={{ padding: 20 }}>
-                  <TouchableOpacity
-                    onPress={showDatePicker}
-                    title="Seleccionar Fecha"
-                  />
-                  <Text>Fecha seleccionada: {date.toLocaleDateString()}</Text>
+                <Text style={styles.label}>Fecha de vencimiento:</Text>
 
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={date}
-                      mode="date"
-                      display="default"
-                      oonChange={(event, date) => {
-                        if (event.type === "set") {
-                          handleOnChange("fecha_vencimiento", date);
-                        } else {
-                          setShowDatePicker(false);
-                        }
-                      }}
-                    />
-                  )}
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={styles.dateButton}
+                >
+                  <Text>
+                    {tarea.fecha_vencimiento
+                      ? parseStringToDate(
+                          tarea.fecha_vencimiento
+                        ).toLocaleDateString()
+                      : "Seleccionar fecha"}
+                  </Text>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={parseStringToDate(tarea.fecha_vencimiento)}
+                    mode="date"
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(false);
+                      if (event.type === "set" && selectedDate) {
+                        handleOnChange("fecha_vencimiento", selectedDate);
+                      }
+                    }}
+                  />
+                )}
               </View>
 
               <View style={styles.priorityContainer}>
