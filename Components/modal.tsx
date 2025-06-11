@@ -1,3 +1,5 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -11,10 +13,12 @@ import {
 import ColorPickerComponent from "../Components/ColorPicker";
 interface Props {
   modalVisible: boolean;
+  tipo: "grupo" | "tarea";
   onClose: () => void;
   onSave: (GroupData: GroupData) => Promise<void>;
   onUpdate?: (GroupData: GroupData) => Promise<GroupData[]>;
   initialgrupo?: GroupData;
+  initialtarea?: TaskProps;
 }
 interface GroupData {
   id_grupo: number;
@@ -22,20 +26,49 @@ interface GroupData {
   color: string | null;
   fecha_creacion: string | null;
 }
+interface TaskProps {
+  id_tarea: number;
+  id_grupo: number;
+  titulo: string;
+  descripcion: string | null;
+  completada: boolean | null;
+  fecha_creacion: string | null;
+  fecha_vencimiento: string | null;
+  prioridad: "baja" | "media" | "alta" | null;
+}
 
 export const ModalGuardar = ({
   modalVisible,
+  tipo,
   onClose,
   onSave,
   onUpdate,
   initialgrupo,
+  initialtarea,
 }: Props) => {
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [grupo, setgrupo] = useState<GroupData>({
     id_grupo: 0,
     nombre: "",
     color: "",
     fecha_creacion: "",
   });
+  const formatDateToString = (date: Date) => {
+    // Convierte Date a string en formato YYYY-MM-DD (puedes ajustar el formato)
+    return date.toISOString().split("T")[0];
+  };
+  const [tarea, settarea] = useState<TaskProps>({
+    id_tarea: 0,
+    id_grupo: 0,
+    titulo: "",
+    descripcion: "",
+    completada: false,
+    fecha_creacion: formatDateToString(new Date()),
+    fecha_vencimiento: formatDateToString(new Date()),
+    prioridad: "baja",
+  });
+
   useEffect(() => {
     if (modalVisible && initialgrupo) {
       setgrupo(initialgrupo);
@@ -43,24 +76,22 @@ export const ModalGuardar = ({
       resetForm();
     }
   }, [modalVisible, initialgrupo]); // Dependencias del efecto
-  const handleOnChange = (campo: keyof GroupData, valor: string) => {
-    setgrupo((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
+  const handleOnChange = (
+    campo: keyof (GroupData | TaskProps),
+    valor: string | Date
+  ) => {
+    if (tipo === "tarea") settarea((prev) => ({ ...prev, [campo]: valor }));
+    else if (tipo === "grupo")
+      setgrupo((prev) => ({
+        ...prev,
+        [campo]: valor,
+      }));
+    setShowDatePicker(false);
   };
-  const validation = (group: GroupData) => {
-    if (
-      group.nombre === "" ||
-      group.color === "" ||
-      group.fecha_creacion === ""
-    ) {
+  const validation = (data: GroupData | TaskProps) => {
+    if (data.nombre === "" || data.color === "") {
       const missingField =
-        group.nombre === ""
-          ? "nombre"
-          : group.color === ""
-          ? "color"
-          : "fecha_creacion";
+        data.nombre === "" ? "nombre" : data.color === "" ? "color" : "";
       Alert.alert("Error", `El campo ${missingField} es obligatorio`);
       return false;
     }
@@ -72,7 +103,11 @@ export const ModalGuardar = ({
       color: color,
     }));
   };
-  const handleActions = (accion: string, grupo: GroupData) => {
+  const handleActions = (
+    accion: string,
+    grupo?: GroupData,
+    tarea?: TaskProps
+  ) => {
     switch (accion) {
       case "save":
         if (!validation(grupo)) return;
@@ -109,7 +144,11 @@ export const ModalGuardar = ({
       fecha_creacion: "",
     });
   };
-
+  const onChange = (event, selectedDate: Date) => {
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
   return (
     <Modal
       animationType="slide"
@@ -122,22 +161,92 @@ export const ModalGuardar = ({
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>
-            {initialgrupo ? "Editar Grupo" : "Crear Grupo"}
+            {tipo === "grupo"
+              ? initialgrupo
+                ? "Editar Grupo"
+                : "Crear Grupo"
+              : initialtarea
+              ? "Editar Tarea"
+              : "Crear Tarea"}
           </Text>
 
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => handleOnChange("nombre", text)}
-            value={grupo.nombre}
-            placeholder="Nombre del Grupo"
-            placeholderTextColor="#999"
-          />
-          <View style={styles.colorPickerWrapper}>
-            <ColorPickerComponent
-              onColorSelected={handleChageColor}
-              initialColor={grupo.color || "#3498db"}
-            />
-          </View>
+          {tipo === "grupo" && (
+            <View>
+              <View>
+                <TextInput
+                  style={styles.input}
+                  onChangeText={(text) => handleOnChange("nombre", text)}
+                  value={grupo.nombre}
+                  placeholder="Nombre del Grupo"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.colorPickerWrapper}>
+                <ColorPickerComponent
+                  onColorSelected={handleChageColor}
+                  initialColor={grupo.color || "#3498db"}
+                />
+              </View>
+            </View>
+          )}
+          {tipo === "tarea" && (
+            <View>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => handleOnChange("titulo", text)}
+                value={tarea.titulo}
+                placeholder="Título de la Tarea"
+                placeholderTextColor="#999"
+              />
+
+              <TextInput
+                style={[styles.input, styles.multilineInput]}
+                onChangeText={(text) => handleOnChange("descripcion", text)}
+                value={tarea.descripcion}
+                placeholder="Descripción"
+                placeholderTextColor="#999"
+                multiline
+              />
+
+              <View style={styles.dateContainer}>
+                <View style={{ padding: 20 }}>
+                  <TouchableOpacity
+                    onPress={showDatePicker}
+                    title="Seleccionar Fecha"
+                  />
+                  <Text>Fecha seleccionada: {date.toLocaleDateString()}</Text>
+
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={date}
+                      mode="date"
+                      display="default"
+                      oonChange={(event, date) => {
+                        if (event.type === "set") {
+                          handleOnChange("fecha_vencimiento", date);
+                        } else {
+                          setShowDatePicker(false);
+                        }
+                      }}
+                    />
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.priorityContainer}>
+                <Text style={styles.label}>Prioridad:</Text>
+                <Picker
+                  selectedValue={tarea.prioridad || "baja"}
+                  onValueChange={(value) => handleOnChange("prioridad", value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Baja" value="baja" />
+                  <Picker.Item label="Media" value="media" />
+                  <Picker.Item label="Alta" value="alta" />
+                </Picker>
+              </View>
+            </View>
+          )}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.buttonSave]}
@@ -165,6 +274,41 @@ export const ModalGuardar = ({
   );
 };
 const styles = StyleSheet.create({
+  dateButton: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 5,
+  },
+  multilineInput: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  dateContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    marginBottom: 5,
+    color: "#000",
+  },
+  priorityContainer: {
+    marginBottom: 15,
+  },
+  picker: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    color: "#000",
+  },
   centeredView: {
     flex: 1,
     justifyContent: "center",

@@ -1,28 +1,55 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { useNavigation } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../theme/colors";
 
-type ItemProps = {
-  elemento: {
-    id_grupo: number;
-    nombre: string;
-    color: string | null;
-    fecha_creacion: string | null;
-  };
-};
+export interface Grupo {
+  id_grupo: number;
+  nombre: string;
+  color: string | null;
+  fecha_creacion: string | null;
+}
+
+export interface Tarea {
+  id_tarea: number;
+  id_grupo: number;
+  titulo: string;
+  descripcion: string | null;
+  completada: boolean | null;
+  fecha_creacion: string | null;
+  fecha_vencimiento: string | null;
+  prioridad: "baja" | "media" | "alta" | null;
+}
+
+export interface Subtarea {
+  id_subtarea: number;
+  id_tarea: number;
+  titulo: string;
+  completada: boolean | null;
+  fecha_creacion: string | null;
+  fecha_vencimiento: string | null;
+  prioridad: "baja" | "media" | "alta" | null;
+}
+type Elemento = (Grupo & { tipo: "grupo" }) | (Tarea & { tipo: "tarea" });
 
 interface Actions {
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (userData: ItemProps["elemento"]) => void;
+  onUpdate: (userData: Elemento) => void;
 }
 
 export const Item = ({
   elemento,
   onDelete,
   onUpdate,
-}: { elemento: ItemProps["elemento"] } & Actions) => {
-  const cardBackground = elemento.color || colors.primaryLight;
+}: { elemento: Elemento } & Actions) => {
+  const cardBackground =
+    elemento.tipo === "grupo" && elemento.color
+      ? elemento.color
+      : colors.primaryLight;
+  const navigation = useNavigation();
+  const goToTasks = (groupId: number) => {
+    navigation.navigate("Task", { id_group: groupId });
+  };
 
   return (
     <View style={styles.cardContainer}>
@@ -30,7 +57,9 @@ export const Item = ({
         {/* Main content */}
         <View style={styles.content}>
           <Text style={[styles.name]} numberOfLines={1}>
-            {elemento.nombre}
+            {"nombre" in elemento
+              ? elemento.nombre + ": ID_GROUP:" + elemento.id_grupo
+              : elemento.titulo + ": ID_TASK:" + elemento.id_tarea}
           </Text>
 
           {elemento.fecha_creacion && (
@@ -42,15 +71,14 @@ export const Item = ({
 
         {/* Actions */}
         <View style={styles.actionsContainer}>
-          <Link href={`../task/${elemento.id_grupo}`} asChild>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.primary }]}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.buttonText}>View Tasks</Text>
-              <Ionicons name="chevron-forward" size={16} color="white" />
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary }]}
+            activeOpacity={0.7}
+            onPress={() => goToTasks(elemento.id_grupo)}
+          >
+            <Text style={styles.buttonText}>View Tasks</Text>
+            <Ionicons name="chevron-forward" size={16} color="white" />
+          </TouchableOpacity>
 
           <View style={styles.iconButtons}>
             <TouchableOpacity

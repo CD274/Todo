@@ -161,7 +161,7 @@ const Home = () => {
   const renderItem = ({ item }: { item: GroupData }) =>
     item && (
       <Item
-        elemento={item}
+        elemento={{ ...item, tipo: "grupo" }}
         onDelete={() => deleteData(item.id_grupo)}
         onUpdate={() => handleUpdate(item)}
       />
@@ -197,6 +197,7 @@ const Home = () => {
 
       <ModalGuardar
         modalVisible={isModalVisible}
+        tipo={"grupo"}
         onClose={() => {
           setModalVisible(false);
           setEditingGroup(undefined);
