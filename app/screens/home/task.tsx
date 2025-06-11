@@ -34,6 +34,7 @@ const Task = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<TaskProps[]>([]);
   const [editingTask, setEditingTask] = useState<TaskProps>();
+  const [completada, setCompletada] = useState(false);
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
@@ -118,6 +119,17 @@ const Task = () => {
       )
     );
   };
+  const HandlecompleteTask = async (id: number) => {
+    setCompletada(!completada);
+    const result = await db
+      .update(tareas)
+      .set({ completada })
+      .where(eq(tareas.id_tarea, Number(id)))
+      .returning();
+    setData((prev) =>
+      prev.map((item) => (item.id_tarea === id ? result[0] : item))
+    );
+  };
   const deleteData = async (id: number) => {
     const result = await db
       .delete(tareas)
@@ -132,11 +144,13 @@ const Task = () => {
     setEditingTask(tarea);
     setModalVisible(true);
   };
+
   const renderItem = ({ item }: { item: TaskProps }) => (
     <Item
       elemento={{ ...item, tipo: "tarea" }}
       onDelete={() => deleteData(item.id_tarea)}
       onUpdate={() => handleUpdate(item)}
+      onComplete={() => HandlecompleteTask(item.id_tarea)}
     />
   );
   return (

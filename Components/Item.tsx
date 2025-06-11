@@ -35,12 +35,14 @@ type Elemento = (Grupo & { tipo: "grupo" }) | (Tarea & { tipo: "tarea" });
 interface Actions {
   onDelete: (id: string) => Promise<void>;
   onUpdate: (userData: Elemento) => void;
+  onComplete?: (id: number) => Promise<void>;
 }
 
 export const Item = ({
   elemento,
   onDelete,
   onUpdate,
+  onComplete,
 }: { elemento: Elemento } & Actions) => {
   const cardBackground =
     elemento.tipo === "grupo" && elemento.color
@@ -71,15 +73,33 @@ export const Item = ({
 
         {/* Actions */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            activeOpacity={0.7}
-            onPress={() => goToTasks(elemento.id_grupo)}
-          >
-            <Text style={styles.buttonText}>View Tasks</Text>
-            <Ionicons name="chevron-forward" size={16} color="white" />
-          </TouchableOpacity>
-
+          {elemento.tipo === "grupo" && (
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.primary }]}
+              activeOpacity={0.7}
+              onPress={() => goToTasks(elemento.id_grupo)}
+            >
+              <Text style={styles.buttonText}>View Tasks</Text>
+              <Ionicons name="chevron-forward" size={16} color="white" />
+            </TouchableOpacity>
+          )}
+          {elemento.tipo === "tarea" && (
+            <View style={styles.completionContainer}>
+              <TouchableOpacity
+                onPress={() => onComplete(elemento.id_tarea.toString())}
+                style={styles.checkboxContainer}
+              >
+                <Ionicons
+                  name={elemento.completada ? "checkbox" : "checkbox-outline"}
+                  size={40}
+                  color={elemento.completada ? colors.primaryDark : "White"}
+                />
+              </TouchableOpacity>
+              {elemento.completada && (
+                <Text style={styles.completedText}>Completada</Text>
+              )}
+            </View>
+          )}
           <View style={styles.iconButtons}>
             <TouchableOpacity
               style={[styles.iconButton, styles.editButton]}
@@ -117,6 +137,25 @@ const styles = StyleSheet.create({
   cardContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  completionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12, // Espacio entre el checkbox y los botones de acción
+  },
+  checkboxContainer: {
+    marginRight: 8, // Espacio entre el checkbox y el texto
+  },
+  completedText: {
+    fontSize: 18,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flex: 1, // Asegura que el contenedor use todo el espacio disponible
   },
   card: {
     borderRadius: 16,
