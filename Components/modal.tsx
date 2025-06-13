@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Modal,
+  ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -30,12 +32,19 @@ interface TaskModalProps extends BaseModalProps {
   onUpdate?: (data: TaskProps) => Promise<TaskProps[]>;
   initialTarea?: TaskProps;
 }
+
 interface GroupData {
   id_grupo: number;
   nombre: string;
   color: string | null;
   fecha_creacion: string | null;
 }
+
+interface Subtarea {
+  titulo: string;
+  completada: boolean;
+}
+
 interface TaskProps {
   id_tarea: number;
   id_grupo: number;
@@ -45,8 +54,11 @@ interface TaskProps {
   fecha_creacion: string | null;
   fecha_vencimiento: string | null;
   prioridad: "baja" | "media" | "alta" | null;
+  subtareas: Subtarea[];
 }
+
 type Props = GroupModalProps | TaskModalProps;
+
 export const ModalGuardar = (props: Props) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [grupo, setgrupo] = useState<GroupData>({
@@ -55,13 +67,16 @@ export const ModalGuardar = (props: Props) => {
     color: "",
     fecha_creacion: "",
   });
+
   const formatDateToString = (date: Date | null): string => {
     if (!date) return "";
     return date.toISOString().split("T")[0];
   };
+
   const parseStringToDate = (dateString: string | null): Date => {
     return dateString ? new Date(dateString) : new Date();
   };
+
   const [tarea, settarea] = useState<TaskProps>({
     id_tarea: 0,
     id_grupo: 0,
@@ -71,12 +86,16 @@ export const ModalGuardar = (props: Props) => {
     fecha_creacion: formatDateToString(new Date()),
     fecha_vencimiento: formatDateToString(new Date()),
     prioridad: "baja",
+    subtareas: [],
   });
 
   useEffect(() => {
     if (props.modalVisible) {
       if (props.tipo === "tarea" && props.initialTarea) {
-        settarea(props.initialTarea);
+        settarea({
+          ...props.initialTarea,
+          subtareas: props.initialTarea.subtareas || [],
+        });
       } else if (props.tipo === "grupo" && props.initialgrupo) {
         setgrupo(props.initialgrupo);
       }
@@ -87,7 +106,7 @@ export const ModalGuardar = (props: Props) => {
 
   const handleOnChange = (
     campo: keyof (GroupData | TaskProps),
-    valor: string | Date | boolean | "baja" | "media" | "alta"
+    valor: string | Date | boolean | "baja" | "media" | "alta" | Subtarea[]
   ) => {
     if (props.tipo === "tarea") {
       const campoTarea = campo as keyof TaskProps;
@@ -103,42 +122,43 @@ export const ModalGuardar = (props: Props) => {
       setgrupo((prev) => ({ ...prev, [campo]: valor }));
     }
   };
+
   const validation = (data: GroupData | TaskProps) => {
     if (props.tipo === "tarea") {
       const tarea = data as TaskProps;
-      if (
-        (tarea.titulo === "" || data.fecha_creacion === "",
-        tarea.descripcion === "")
-      ) {
-        const missingField =
-          tarea.titulo === ""
-            ? "titulo"
-            : tarea.descripcion === ""
-            ? "descripcion"
-            : tarea.fecha_creacion === ""
-            ? "fecha_creacion"
-            : "";
+      if (tarea.titulo === "" || tarea.descripcion === "") {
+        const missingField = tarea.titulo === "" ? "título" : "descripción";
         Alert.alert("Error", `El campo ${missingField} es obligatorio`);
         return false;
       }
+
+      // Validar subtareas
+      for (const subtarea of tarea.subtareas) {
+        if (subtarea.titulo.trim() === "") {
+          Alert.alert("Error", "Todas las subtareas deben tener un título");
+          return false;
+        }
+      }
     }
+
     if (props.tipo === "grupo") {
       const grupo = data as GroupData;
       if (grupo.nombre === "" || grupo.color === "") {
-        const missingField =
-          grupo.nombre === "" ? "nombre" : grupo.color === "" ? "color" : "";
+        const missingField = grupo.nombre === "" ? "nombre" : "color";
         Alert.alert("Error", `El campo ${missingField} es obligatorio`);
         return false;
       }
     }
     return true;
   };
+
   const handleChageColor = (color: string) => {
     setgrupo((prev) => ({
       ...prev,
       color: color,
     }));
   };
+
   const handleActions = (accion: string, data?: GroupData | TaskProps) => {
     switch (accion) {
       case "save":
@@ -169,6 +189,7 @@ export const ModalGuardar = (props: Props) => {
         break;
     }
   };
+
   const getButtonAction = () => {
     if (props.tipo === "grupo") {
       return props.initialgrupo
@@ -181,12 +202,45 @@ export const ModalGuardar = (props: Props) => {
     }
   };
 
+  const agregarSubtarea = () => {
+    settarea((prev) => ({
+      ...prev,
+      subtareas: [...prev.subtareas, { titulo: "", completada: false }],
+    }));
+  };
+
+  const eliminarSubtarea = (index: number) => {
+    settarea((prev) => ({
+      ...prev,
+      subtareas: prev.subtareas.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSubtareaChange = (
+    index: number,
+    field: keyof Subtarea,
+    value: string | boolean
+  ) => {
+    settarea((prev) => {
+      const nuevasSubtareas = [...prev.subtareas];
+      nuevasSubtareas[index] = {
+        ...nuevasSubtareas[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        subtareas: nuevasSubtareas,
+      };
+    });
+  };
+
   const getButtonText = () => {
     if (props.tipo === "grupo") {
       return props.initialgrupo ? "Actualizar" : "Guardar";
     }
     return props.initialTarea ? "Actualizar" : "Guardar";
   };
+
   const resetForm = () => {
     settarea({
       id_tarea: 0,
@@ -197,6 +251,7 @@ export const ModalGuardar = (props: Props) => {
       fecha_creacion: "",
       fecha_vencimiento: formatDateToString(new Date()),
       prioridad: "baja",
+      subtareas: [],
     });
     setgrupo({
       id_grupo: 0,
@@ -205,6 +260,7 @@ export const ModalGuardar = (props: Props) => {
       fecha_creacion: "",
     });
   };
+
   return (
     <Modal
       animationType="slide"
@@ -245,6 +301,7 @@ export const ModalGuardar = (props: Props) => {
               </View>
             </View>
           )}
+
           {props.tipo === "tarea" && (
             <View>
               <TextInput
@@ -258,7 +315,7 @@ export const ModalGuardar = (props: Props) => {
               <TextInput
                 style={[styles.input, styles.multilineInput]}
                 onChangeText={(text) => handleOnChange("descripcion", text)}
-                value={tarea.descripcion}
+                value={tarea.descripcion || ""}
                 placeholder="Descripción"
                 placeholderTextColor="#999"
                 multiline
@@ -266,7 +323,6 @@ export const ModalGuardar = (props: Props) => {
 
               <View style={styles.dateContainer}>
                 <Text style={styles.label}>Fecha de vencimiento:</Text>
-
                 <TouchableOpacity
                   onPress={() => setShowDatePicker(true)}
                   style={styles.dateButton}
@@ -307,8 +363,50 @@ export const ModalGuardar = (props: Props) => {
                   <Picker.Item label="Alta" value="alta" />
                 </Picker>
               </View>
+
+              <View>
+                <Text style={styles.sectionTitle}>Subtareas</Text>
+                <ScrollView style={styles.subtareasScroll}>
+                  {tarea.subtareas.map((subtarea, index) => (
+                    <View key={index} style={styles.subtareaContainer}>
+                      <TextInput
+                        style={[styles.input, styles.subtareaInput]}
+                        onChangeText={(value) =>
+                          handleSubtareaChange(index, "titulo", value)
+                        }
+                        value={subtarea.titulo}
+                        placeholder={`Subtarea ${index + 1}`}
+                        placeholderTextColor="#999"
+                      />
+                      <View style={styles.subtareaActions}>
+                        <Switch
+                          value={subtarea.completada}
+                          onValueChange={(value) =>
+                            handleSubtareaChange(index, "completada", value)
+                          }
+                        />
+                        {tarea.subtareas.length > 1 && (
+                          <TouchableOpacity
+                            onPress={() => eliminarSubtarea(index)}
+                            style={styles.deleteButton}
+                          >
+                            <Text style={styles.deleteButtonText}>×</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                  <TouchableOpacity
+                    onPress={agregarSubtarea}
+                    style={styles.addButton}
+                  >
+                    <Text style={styles.addButtonText}>+ Agregar subtarea</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
             </View>
           )}
+
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.buttonSave]}
@@ -329,42 +427,8 @@ export const ModalGuardar = (props: Props) => {
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
-  dateButton: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 5,
-  },
-  multilineInput: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  dateContainer: {
-    marginBottom: 15,
-  },
-  label: {
-    marginBottom: 5,
-    color: "#000",
-  },
-  priorityContainer: {
-    marginBottom: 15,
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  checkboxLabel: {
-    marginLeft: 8,
-    color: "#000",
-  },
   centeredView: {
     flex: 1,
     justifyContent: "center",
@@ -372,54 +436,111 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalView: {
-    width: "85%",
+    width: "90%",
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: "80%",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "#333",
   },
   input: {
-    height: 50,
+    height: 40,
+    borderColor: "#ccc",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  multilineInput: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  dateContainer: {
     marginBottom: 15,
-    fontSize: 16,
-    backgroundColor: "#f9f9f9",
+  },
+  label: {
+    marginBottom: 5,
+    fontWeight: "500",
+  },
+  dateButton: {
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+  },
+  priorityContainer: {
+    marginBottom: 15,
+  },
+  picker: {
+    height: 50,
+    width: "100%",
   },
   colorPickerWrapper: {
+    marginVertical: 15,
+  },
+  subtareasScroll: {
+    maxHeight: 150,
     marginBottom: 15,
-    alignItems: "center", // Centra el color picker horizontalmente
+  },
+  sectionTitle: {
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  subtareaContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  subtareaInput: {
+    flex: 1,
+    marginRight: 10,
+  },
+  subtareaActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteButton: {
+    marginLeft: 10,
+    backgroundColor: "#ff4444",
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  addButton: {
+    backgroundColor: "#4CAF50",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 5,
+  },
+  addButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 15, // Aumenté el margen superior
+    marginTop: 20,
   },
   button: {
-    borderRadius: 10,
-    padding: 15,
-    elevation: 2,
-    minWidth: "48%",
+    padding: 10,
+    borderRadius: 5,
+    width: "48%",
     alignItems: "center",
   },
   buttonSave: {
-    backgroundColor: "#2196F3",
+    backgroundColor: "#4CAF50",
   },
   buttonCancel: {
     backgroundColor: "#f44336",
@@ -427,6 +548,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 16,
   },
 });

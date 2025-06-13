@@ -179,11 +179,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.9,
   },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   button: {
     flexDirection: "row",
     alignItems: "center",

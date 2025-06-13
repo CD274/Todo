@@ -1,6 +1,6 @@
 import { Item } from "@/Components/Item";
 import { ModalGuardar } from "@/Components/modal";
-import { tareas } from "@/db/schema";
+import { subtareas, tareas } from "@/db/schema";
 import { colors } from "@/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
@@ -16,6 +16,11 @@ import {
 } from "react-native";
 import { useDatabase } from "../../../context/DatabaseContext";
 
+interface Subtarea {
+  titulo: string;
+  completada: boolean;
+}
+
 interface TaskProps {
   id_tarea: number;
   id_grupo: number;
@@ -25,6 +30,7 @@ interface TaskProps {
   fecha_creacion: string | null;
   fecha_vencimiento: string | null;
   prioridad: "baja" | "media" | "alta" | null;
+  subtareas: Subtarea[];
 }
 
 const Task = () => {
@@ -35,6 +41,7 @@ const Task = () => {
   const [data, setData] = useState<TaskProps[]>([]);
   const [editingTask, setEditingTask] = useState<TaskProps>();
   const [completada, setCompletada] = useState(false);
+
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
@@ -44,102 +51,188 @@ const Task = () => {
             .select()
             .from(tareas)
             .where(eq(tareas.id_grupo, Number(id_group)));
-          const stringTasks = tasks.map((tareas) => ({
-            id_tarea: tareas.id_tarea,
-            id_grupo: tareas.id_grupo,
-            titulo: tareas.titulo,
-            descripcion: tareas.descripcion,
-            completada: tareas.completada,
-            fecha_creacion: tareas.fecha_creacion,
-            fecha_vencimiento: tareas.fecha_vencimiento,
-            prioridad: tareas.prioridad,
-          }));
+
+          const tasksWithSubtareas = await Promise.all(
+            tasks.map(async (task) => {
+              const subtasks = await db
+                .select({
+                  titulo: subtareas.titulo,
+                  completada: subtareas.completada,
+                })
+                .from(subtareas)
+                .where(eq(subtareas.id_tarea, task.id_tarea));
+
+              return {
+                id_tarea: task.id_tarea,
+                id_grupo: task.id_grupo,
+                titulo: task.titulo,
+                descripcion: task.descripcion,
+                completada: task.completada,
+                fecha_creacion: task.fecha_creacion,
+                fecha_vencimiento: task.fecha_vencimiento,
+                prioridad: task.prioridad,
+                subtareas: subtasks,
+              };
+            })
+          );
+
           if (isActive) {
-            setData(stringTasks);
+            setData(tasksWithSubtareas);
           }
         } catch (error) {
           console.error("Error al cargar los datos de las tareas:", error);
           if (isActive) {
-            // Opcional: Mostrar estado de error
             setData([]);
           }
         }
       };
       loadData();
-    }, [])
-  );
-  const saveData = async (nuevaTarea: TaskProps) => {
-    const result = await db
-      .insert(tareas)
-      .values({
-        id_grupo: id_group,
-        titulo: nuevaTarea.titulo,
-        descripcion: nuevaTarea.descripcion,
-        completada: nuevaTarea.completada,
-        fecha_creacion: new Date().toISOString(),
-        fecha_vencimiento: nuevaTarea.fecha_vencimiento,
-        prioridad: nuevaTarea.prioridad,
-      })
-      .returning();
-    if (result.length === 0) {
-      console.log("No se pudo guardar la tarea");
-      return;
-    }
 
-    setData((prev) => [
-      ...prev,
-      {
-        id_tarea: result[0].id_tarea,
-        id_grupo: result[0].id_grupo,
-        titulo: result[0].titulo,
-        descripcion: result[0].descripcion,
-        completada: result[0].completada,
-        fecha_creacion: result[0].fecha_creacion,
-        fecha_vencimiento: result[0].fecha_vencimiento,
-        prioridad: result[0].prioridad,
-      },
-    ]);
+      return () => {
+        isActive = false;
+      };
+    }, [id_group])
+  );
+
+  const saveData = async (nuevaTarea: TaskProps) => {
+    try {
+      const result = await db.transaction(async (tx) => {
+        // Guardar la tarea principal
+        const [taskResult] = await tx
+          .insert(tareas)
+          .values({
+            id_grupo: id_group,
+            titulo: nuevaTarea.titulo,
+            descripcion: nuevaTarea.descripcion,
+            completada: nuevaTarea.completada,
+            fecha_creacion: new Date().toISOString(),
+            fecha_vencimiento: nuevaTarea.fecha_vencimiento,
+            prioridad: nuevaTarea.prioridad,
+          })
+          .returning();
+
+        // Guardar las subtareas si existen
+        if (nuevaTarea.subtareas?.length > 0) {
+          await tx.insert(subtareas).values(
+            nuevaTarea.subtareas.map((subtarea) => ({
+              id_tarea: taskResult.id_tarea,
+              titulo: subtarea.titulo,
+              completada: subtarea.completada,
+            }))
+          );
+        }
+
+        return taskResult;
+      });
+
+      // Actualizar el estado local
+      setData((prev) => [
+        ...prev,
+        {
+          ...nuevaTarea,
+          id_tarea: result.id_tarea,
+          id_grupo: result.id_grupo,
+          subtareas: nuevaTarea.subtareas || [],
+        },
+      ]);
+    } catch (error) {
+      console.error("Error al guardar la tarea:", error);
+    }
   };
-  const updateData = async (nuevaTarea: TaskProps) => {
-    const result = await db
-      .update(tareas)
-      .set({
-        titulo: nuevaTarea.titulo,
-        descripcion: nuevaTarea.descripcion,
-        completada: nuevaTarea.completada,
-        fecha_creacion: nuevaTarea.fecha_creacion,
-        fecha_vencimiento: nuevaTarea.fecha_vencimiento,
-        prioridad: nuevaTarea.prioridad,
-      })
-      .where(eq(tareas.id_tarea, Number(nuevaTarea.id_tarea)))
-      .returning();
-    setData((prev) =>
-      prev.map((item) =>
-        item.id_tarea === nuevaTarea.id_tarea ? result[0] : item
-      )
-    );
+
+  const updateData = async (tareaActualizada: TaskProps) => {
+    try {
+      const result = await db.transaction(async (tx) => {
+        // Actualizar la tarea principal
+        const [taskResult] = await tx
+          .update(tareas)
+          .set({
+            titulo: tareaActualizada.titulo,
+            descripcion: tareaActualizada.descripcion,
+            completada: tareaActualizada.completada,
+            fecha_vencimiento: tareaActualizada.fecha_vencimiento,
+            prioridad: tareaActualizada.prioridad,
+          })
+          .where(eq(tareas.id_tarea, tareaActualizada.id_tarea))
+          .returning();
+
+        // Eliminar todas las subtareas existentes
+        await tx
+          .delete(subtareas)
+          .where(eq(subtareas.id_tarea, tareaActualizada.id_tarea));
+
+        // Insertar las nuevas subtareas
+        if (tareaActualizada.subtareas?.length > 0) {
+          await tx.insert(subtareas).values(
+            tareaActualizada.subtareas.map((subtarea) => ({
+              id_tarea: tareaActualizada.id_tarea,
+              titulo: subtarea.titulo,
+              completada: subtarea.completada,
+            }))
+          );
+        }
+
+        return taskResult;
+      });
+
+      // Actualizar el estado local
+      setData((prev) =>
+        prev.map((item) =>
+          item.id_tarea === tareaActualizada.id_tarea
+            ? {
+                ...tareaActualizada,
+                subtareas: tareaActualizada.subtareas || [],
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error("Error al actualizar la tarea:", error);
+    }
   };
+
   const HandlecompleteTask = async (id: number) => {
-    setCompletada(!completada);
-    const result = await db
-      .update(tareas)
-      .set({ completada })
-      .where(eq(tareas.id_tarea, Number(id)))
-      .returning();
-    setData((prev) =>
-      prev.map((item) => (item.id_tarea === id ? result[0] : item))
-    );
+    try {
+      const newCompletedStatus = !completada;
+      setCompletada(newCompletedStatus);
+
+      const [result] = await db
+        .update(tareas)
+        .set({ completada: newCompletedStatus })
+        .where(eq(tareas.id_tarea, id))
+        .returning();
+
+      setData((prev) =>
+        prev.map((item) =>
+          item.id_tarea === id
+            ? { ...item, completada: newCompletedStatus }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error("Error al actualizar estado de tarea:", error);
+    }
   };
+
   const deleteData = async (id: number) => {
-    const result = await db
-      .delete(tareas)
-      .where(eq(tareas.id_tarea, Number(id)))
-      .returning();
-    setData((prev) => prev.filter((item) => item.id_tarea !== id));
+    try {
+      await db.transaction(async (tx) => {
+        // Primero eliminar las subtareas
+        await tx.delete(subtareas).where(eq(subtareas.id_tarea, id));
+        // Luego eliminar la tarea principal
+        await tx.delete(tareas).where(eq(tareas.id_tarea, id));
+      });
+
+      setData((prev) => prev.filter((item) => item.id_tarea !== id));
+    } catch (error) {
+      console.error("Error al eliminar tarea:", error);
+    }
   };
+
   const handleModal = () => {
     setModalVisible(!isModalVisible);
   };
+
   const handleUpdate = (tarea: TaskProps) => {
     setEditingTask(tarea);
     setModalVisible(true);
@@ -153,17 +246,21 @@ const Task = () => {
       onComplete={() => HandlecompleteTask(item.id_tarea)}
     />
   );
+
   return (
-    <View>
+    <View style={styles.container}>
       <TouchableOpacity style={styles.addButton} onPress={handleModal}>
         <Ionicons name="add-circle" size={24} color="white" />
-        <Text style={styles.addButtonText}>Crear un grupo de tareas</Text>
+        <Text style={styles.addButtonText}>Crear nueva tarea</Text>
       </TouchableOpacity>
+
       <FlatList
         data={data}
-        renderItem={({ item }: { item: TaskProps }) => renderItem({ item })}
+        renderItem={renderItem}
         keyExtractor={(item) => item.id_tarea.toString()}
+        contentContainerStyle={styles.listContainer}
       />
+
       <ModalGuardar
         modalVisible={isModalVisible}
         tipo="tarea"
@@ -178,6 +275,7 @@ const Task = () => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -259,6 +357,9 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: colors.text,
+  },
+  listContainer: {
+    paddingBottom: 16,
   },
 });
 
