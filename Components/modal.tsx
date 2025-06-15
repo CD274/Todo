@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import { useEffect, useState } from "react";
@@ -263,23 +264,21 @@ export const ModalGuardar = (props: Props) => {
 
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       visible={props.modalVisible}
-      onRequestClose={() => {
-        handleActions("cancel", grupo);
-      }}
+      onRequestClose={() => handleActions("cancel", grupo)}
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>
             {props.tipo === "grupo"
               ? props.initialgrupo
-                ? "Editar Grupo"
-                : "Crear Grupo"
+                ? "Editar grupo"
+                : "Nuevo grupo"
               : props.initialTarea
-              ? "Editar Tarea"
-              : "Crear Tarea"}
+              ? "Editar tarea"
+              : "Nueva tarea"}
           </Text>
 
           {props.tipo === "grupo" && (
@@ -364,9 +363,12 @@ export const ModalGuardar = (props: Props) => {
                 </Picker>
               </View>
 
-              <View>
+              <View style={styles.subtareasContainer}>
                 <Text style={styles.sectionTitle}>Subtareas</Text>
-                <ScrollView style={styles.subtareasScroll}>
+                <ScrollView
+                  style={styles.subtareasScroll}
+                  contentContainerStyle={{ paddingRight: 8 }} // Añadir padding para evitar cortes
+                >
                   {tarea.subtareas.map((subtarea, index) => (
                     <View key={index} style={styles.subtareaContainer}>
                       <TextInput
@@ -390,7 +392,11 @@ export const ModalGuardar = (props: Props) => {
                             onPress={() => eliminarSubtarea(index)}
                             style={styles.deleteButton}
                           >
-                            <Text style={styles.deleteButtonText}>×</Text>
+                            <Ionicons
+                              name="trash-outline"
+                              size={20}
+                              color="#a4262c"
+                            />
                           </TouchableOpacity>
                         )}
                       </View>
@@ -433,120 +439,159 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 16,
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
   modalView: {
-    width: "90%",
+    width: "95%", // más ancho para asegurar buen espacio en pantallas pequeñas
+    maxWidth: 500, // limitar en pantallas grandes
     backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    maxHeight: "80%",
+    borderRadius: 8,
+    padding: 24,
+    maxHeight: "90%", // mayor altura disponible
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "600",
     marginBottom: 20,
-    textAlign: "center",
+    color: "#323130",
   },
   input: {
     height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderColor: "#edebe9",
+    paddingHorizontal: 8,
+    marginBottom: 16,
+    fontSize: 16,
+    color: "#323130",
   },
   multilineInput: {
-    height: 80,
+    height: 100,
     textAlignVertical: "top",
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 16,
+    borderColor: "#edebe9",
+    color: "#323130",
+    fontSize: 15,
   },
   dateContainer: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   label: {
-    marginBottom: 5,
-    fontWeight: "500",
+    marginBottom: 6,
+    fontSize: 14,
+    color: "#605e5c",
   },
   dateButton: {
     padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
+    borderBottomWidth: 1,
+    borderColor: "#edebe9",
   },
   priorityContainer: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   picker: {
     height: 50,
     width: "100%",
+    color: "#323130",
   },
   colorPickerWrapper: {
-    marginVertical: 15,
+    marginVertical: 12,
+  },
+  subtareasContainer: {
+    marginBottom: 16,
   },
   subtareasScroll: {
     maxHeight: 150,
-    marginBottom: 15,
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
-    fontWeight: "bold",
+    fontWeight: "600",
     marginBottom: 10,
+    color: "#323130",
+    fontSize: 16,
   },
   subtareaContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+    paddingHorizontal: 4,
   },
   subtareaInput: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 8,
+    borderBottomWidth: 1,
+    borderColor: "#edebe9",
+    paddingVertical: 6,
+    fontSize: 15,
+    color: "#323130",
   },
   subtareaActions: {
     flexDirection: "row",
     alignItems: "center",
   },
   deleteButton: {
-    marginLeft: 10,
-    backgroundColor: "#ff4444",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    marginLeft: 8,
+    width: 28,
+    height: 28,
     justifyContent: "center",
     alignItems: "center",
   },
   deleteButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: "#a4262c",
+    fontSize: 20,
   },
   addButton: {
-    backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 5,
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginTop: 4,
   },
   addButtonText: {
-    color: "white",
-    fontWeight: "bold",
+    color: "#0078d4",
+    fontSize: 15,
+    marginLeft: 6,
   },
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
+    marginTop: 24,
   },
   button: {
-    padding: 10,
-    borderRadius: 5,
-    width: "48%",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginLeft: 12,
+    minWidth: 80,
     alignItems: "center",
   },
   buttonSave: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#0078d4",
   },
   buttonCancel: {
-    backgroundColor: "#f44336",
+    backgroundColor: "transparent",
   },
   buttonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  buttonCancelText: {
+    color: "#0078d4",
+  },
+  buttonSaveText: {
     color: "white",
-    fontWeight: "bold",
   },
 });
