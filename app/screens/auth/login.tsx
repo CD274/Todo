@@ -1,15 +1,20 @@
 // Login.js
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { authStyles } from "../../../styles/authStyles";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigation = useNavigation();
+  useEffect(() => {
+    if (user) {
+      navigation.navigate("Home");
+    }
+  }, [user]);
   const handleLogin = async () => {
     try {
       const result = await login({ email, password });

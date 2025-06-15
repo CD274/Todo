@@ -5,8 +5,10 @@ import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import React, { useState } from "react";
 
 import { ModalGuardar } from "@/Components/modal";
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import {
+  Alert,
   FlatList,
   ScrollView,
   StatusBar,
@@ -33,6 +35,7 @@ const Home = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<GroupData[]>([]);
   const [editingGroup, setEditingGroup] = useState<GroupData>();
+  const { logout } = useAuth();
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
@@ -158,6 +161,24 @@ const Home = () => {
     );
     setModalVisible(true);
   };
+  const handleLogout = () => {
+    Alert.alert(
+      "Cerrar sesión",
+      "¿Estás seguro que deseas salir de tu cuenta?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Cerrar sesión",
+          style: "destructive",
+          onPress: () => logout(),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
   const renderItem = ({ item }: { item: GroupData }) =>
     item && (
       <Item
@@ -172,6 +193,10 @@ const Home = () => {
 
       <View style={styles.header}>
         <Text style={styles.title}>To Do</Text>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Ionicons name="log-out-outline" size={24} color="#0078d4" />
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -291,6 +316,17 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: colors.text,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 8,
+    borderRadius: 4,
+  },
+  logoutText: {
+    color: "#0078d4",
+    marginLeft: 8,
+    fontSize: 14,
   },
 });
 

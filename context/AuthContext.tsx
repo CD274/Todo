@@ -1,4 +1,5 @@
-import React, { ReactNode, createContext, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { ReactNode, createContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
@@ -17,11 +18,45 @@ interface AuthContextType {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   register: ({ email, password }: User) => Promise<any>; // o Promise<ResponseData>
   login: ({ email, password }: User) => Promise<any>; // o Promise<ResponseData>
+  logout: () => Promise<void>;
 }
 
 export const AuhtProvider = ({ children }: AuthContextProps) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userdata = await AsyncStorage.getItem("user");
+        if (userdata) {
+          setUser(JSON.parse(userdata));
+        }
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    loadUser();
+  }, []);
+  const userPersister = async (userData: any) => {
+    try {
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+    } catch (error) {
+      console.error("Error saving user data:", error);
+    }
+  };
+  const clearUser = async () => {
+    try {
+      await AsyncStorage.removeItem("user");
+      setUser(null);
+    } catch (error) {
+      console.error("Error clearing user data:", error);
+    }
+  };
+  const logout = async () => {
+    await clearUser();
+  };
   const register = async ({ email, password }: User) => {
     try {
       const response = await fetch("http://192.168.1.108:3000/register", {
@@ -36,6 +71,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
         Alert.alert("Error", data.error);
         return;
       }
+      Alert.alert("Success", data.success);
       return data;
     } catch (error) {
       console.log(error);
@@ -55,6 +91,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
         return { success: false };
       }
       setUser(data.user);
+      await userPersister(data.user);
       return { success: true };
     } catch (error) {
       console.log(error);
@@ -62,7 +99,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   };
   return (
     <AuthContext.Provider
-      value={{ user, setUser, loading, setLoading, register, login }}
+      value={{ user, setUser, loading, setLoading, register, login, logout }}
     >
       {children}
     </AuthContext.Provider>
