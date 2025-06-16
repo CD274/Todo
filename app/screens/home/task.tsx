@@ -7,7 +7,7 @@ import { useRoute } from "@react-navigation/native";
 import { eq } from "drizzle-orm";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDatabase } from "../../../context/DatabaseContext";
 
@@ -91,7 +91,6 @@ const Task = () => {
 
   const saveData = async (nuevaTarea: TaskProps) => {
     nuevaTarea.fecha_creacion = new Date().toISOString();
-    console.log("Tarea que se va a guardar: " + JSON.stringify(nuevaTarea));
     try {
       const result = await db.transaction(async (tx) => {
         // Guardar la tarea principal
@@ -212,18 +211,33 @@ const Task = () => {
   };
 
   const deleteData = async (id: number) => {
-    try {
-      await db.transaction(async (tx) => {
-        // Primero eliminar las subtareas
-        await tx.delete(subtareas).where(eq(subtareas.id_tarea, id));
-        // Luego eliminar la tarea principal
-        await tx.delete(tareas).where(eq(tareas.id_tarea, id));
-      });
+    Alert.alert(
+      "Confirmación",
+      "¿Estás seguro de que deseas eliminar esta tarea?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            try {
+              await db.transaction(async (tx) => {
+                await tx.delete(subtareas).where(eq(subtareas.id_tarea, id));
+                await tx.delete(tareas).where(eq(tareas.id_tarea, id));
+              });
 
-      setData((prev) => prev.filter((item) => item.id_tarea !== id));
-    } catch (error) {
-      console.error("Error al eliminar tarea:", error);
-    }
+              setData((prev) => prev.filter((item) => item.id_tarea !== id));
+            } catch (error) {
+              console.error("Error al eliminar tarea:", error);
+              Alert.alert("Error", "No se pudo eliminar la tarea");
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
   const handleModal = () => {
     setModalVisible(!isModalVisible);

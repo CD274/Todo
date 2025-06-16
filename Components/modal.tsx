@@ -510,10 +510,10 @@ const styles = StyleSheet.create({
     borderColor: "#E8ECEF",
   },
   priorityContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   picker: {
-    height: 48,
+    height: 52,
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
     borderWidth: 1,

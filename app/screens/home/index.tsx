@@ -1,11 +1,10 @@
-import { grupos } from "@/db/schema";
+import { Header } from "@/Components/header";
+import { ModalGuardar } from "@/Components/modal";
+import { grupos, subtareas, tareas } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import React, { useEffect, useState } from "react";
-
-import { Header } from "@/Components/header";
-import { ModalGuardar } from "@/Components/modal";
-import { FlatList, StyleSheet, Text } from "react-native";
+import { Alert, FlatList, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Item } from "../../../Components/Item";
 import { useDatabase } from "../../../context/DatabaseContext";
@@ -16,16 +15,15 @@ interface GroupData {
   color: string | null;
   fecha_creacion: string | null;
 }
-
 const Home = () => {
   const db = useDatabase();
   const { success, error } = useMigrations(db, migrations);
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<GroupData[]>([]);
   const [editingGroup, setEditingGroup] = useState<GroupData>();
+
   useEffect(() => {
     let isActive = true;
-
     const loadData = async () => {
       try {
         const groups = await db.select().from(grupos).all();
@@ -103,12 +101,46 @@ const Home = () => {
     ]);
   };
   const deleteData = async (id: number) => {
-    const result = await db
-      .delete(grupos)
-      .where(eq(grupos.id_grupo, Number(id)))
-      .returning();
-    setData((prev) => prev.filter((item) => item.id_grupo !== id));
+    Alert.alert(
+      "Confirmación",
+      "¿Estás seguro de que deseas eliminar este grupo y todo su contenido?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            try {
+              await db.transaction(async (tx) => {
+                const tareasDelGrupo = await tx
+                  .select({ id_tarea: tareas.id_tarea })
+                  .from(tareas)
+                  .where(eq(tareas.id_grupo, id));
+                for (const tarea of tareasDelGrupo) {
+                  await tx
+                    .delete(subtareas)
+                    .where(eq(subtareas.id_tarea, tarea.id_tarea));
+                }
+                await tx.delete(tareas).where(eq(tareas.id_grupo, id));
+                await tx.delete(grupos).where(eq(grupos.id_grupo, id));
+              });
+              setData((prev) => prev.filter((item) => item.id_grupo !== id));
+            } catch (error) {
+              console.error("Error al eliminar grupo:", error);
+              Alert.alert(
+                "Error",
+                "No se pudo eliminar el grupo y su contenido"
+              );
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
+
   const updateData = async (updatedGroup: GroupData) => {
     try {
       const result = await db
@@ -168,7 +200,6 @@ const Home = () => {
         renderItem={({ item }: { item: GroupData }) => renderItem({ item })}
         keyExtractor={(item) => item.id_grupo.toString()}
       />
-
       <ModalGuardar
         modalVisible={isModalVisible}
         tipo={"grupo"}

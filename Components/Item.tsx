@@ -43,8 +43,19 @@ export const Item = ({
   onUpdate,
   onComplete,
 }: { elemento: Elemento } & Actions) => {
+  const priorityColors = {
+    alta: "#ffcdd2",
+    media: "#fff9c4",
+    baja: "#bbdefb",
+    default: "#f0f9ff",
+  };
+
   const cardBackground =
-    elemento.tipo === "grupo" && elemento.color ? elemento.color : "#f0f9ff"; // Fondo pastel azul claro para tareas
+    elemento.tipo === "grupo" && elemento.color
+      ? elemento.color
+      : elemento.tipo === "tarea" && elemento.prioridad
+      ? priorityColors[elemento.prioridad] || priorityColors.default
+      : priorityColors.default;
 
   const navigation = useNavigation();
 
