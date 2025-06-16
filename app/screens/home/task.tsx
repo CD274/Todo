@@ -1,19 +1,14 @@
+import { Header } from "@/Components/header";
 import { Item } from "@/Components/Item";
 import { ModalGuardar } from "@/Components/modal";
 import { subtareas, tareas } from "@/db/schema";
 import { colors } from "@/theme/colors";
-import { Ionicons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
 import { eq } from "drizzle-orm";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDatabase } from "../../../context/DatabaseContext";
 
 interface Subtarea {
@@ -36,7 +31,7 @@ interface TaskProps {
 const Task = () => {
   const db = useDatabase();
   const route = useRoute();
-  const { id_group } = route.params;
+  const { id_group, name } = route.params;
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<TaskProps[]>([]);
   const [editingTask, setEditingTask] = useState<TaskProps>();
@@ -248,31 +243,29 @@ const Task = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.addButton} onPress={handleModal}>
-        <Ionicons name="add-circle" size={24} color="white" />
-        <Text style={styles.addButtonText}>Crear nueva tarea</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <Header handleModal={handleModal} tipo="task" />
+      <View style={styles.container}>
+        <FlatList
+          data={data}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id_tarea.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
 
-      <FlatList
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id_tarea.toString()}
-        contentContainerStyle={styles.listContainer}
-      />
-
-      <ModalGuardar
-        modalVisible={isModalVisible}
-        tipo="tarea"
-        onClose={() => {
-          setModalVisible(false);
-          setEditingTask(undefined);
-        }}
-        onSave={saveData}
-        onUpdate={updateData}
-        initialTarea={editingTask}
-      />
-    </View>
+        <ModalGuardar
+          modalVisible={isModalVisible}
+          tipo="tarea"
+          onClose={() => {
+            setModalVisible(false);
+            setEditingTask(undefined);
+          }}
+          onSave={saveData}
+          onUpdate={updateData}
+          initialTarea={editingTask}
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 

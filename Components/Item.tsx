@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../theme/colors";
 
 export interface Grupo {
   id_grupo: number;
@@ -45,77 +44,80 @@ export const Item = ({
   onComplete,
 }: { elemento: Elemento } & Actions) => {
   const cardBackground =
-    elemento.tipo === "grupo" && elemento.color
-      ? elemento.color
-      : colors.primaryLight;
+    elemento.tipo === "grupo" && elemento.color ? elemento.color : "#f0f9ff"; // Fondo pastel azul claro para tareas
+
   const navigation = useNavigation();
-  const goToTasks = (groupId: number) => {
-    navigation.navigate("Task", { id_group: groupId });
+
+  const goToTasks = (groupId: number, name: string) => {
+    navigation.navigate("Task", { id_group: groupId, nombre: name });
   };
 
   return (
     <View style={styles.cardContainer}>
       <View style={[styles.card, { backgroundColor: cardBackground }]}>
-        {/* Main content */}
-        <View style={styles.content}>
-          <Text style={[styles.name]} numberOfLines={1}>
-            {"nombre" in elemento
-              ? elemento.nombre + ": ID_GROUP:" + elemento.id_grupo
-              : elemento.titulo + ": ID_TASK:" + elemento.id_tarea}
-          </Text>
-
-          {elemento.fecha_creacion && (
-            <Text style={[styles.date]}>
-              {formatDate(elemento.fecha_creacion)}
+        {/* Contenedor interno con fondo constante */}
+        <View style={styles.innerCard}>
+          {/* Main content */}
+          <View style={styles.content}>
+            <Text style={styles.name} numberOfLines={1}>
+              {"nombre" in elemento ? elemento.nombre : elemento.titulo}
             </Text>
-          )}
-        </View>
 
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          {elemento.tipo === "grupo" && (
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.primary }]}
-              activeOpacity={0.7}
-              onPress={() => goToTasks(elemento.id_grupo)}
-            >
-              <Text style={styles.buttonText}>View Tasks</Text>
-              <Ionicons name="chevron-forward" size={16} color="white" />
-            </TouchableOpacity>
-          )}
-          {elemento.tipo === "tarea" && (
-            <View style={styles.completionContainer}>
+            {elemento.fecha_creacion && (
+              <Text style={styles.date}>
+                {formatDate(elemento.fecha_creacion)}
+              </Text>
+            )}
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actionsContainer}>
+            {elemento.tipo === "grupo" && (
               <TouchableOpacity
-                onPress={() => onComplete(elemento.id_tarea.toString())}
-                style={styles.checkboxContainer}
+                style={styles.viewButton}
+                activeOpacity={0.7}
+                onPress={() => goToTasks(elemento.id_grupo, elemento.nombre)}
               >
-                <Ionicons
-                  name={elemento.completada ? "checkbox" : "checkbox-outline"}
-                  size={40}
-                  color={elemento.completada ? colors.primaryDark : "White"}
-                />
+                <Text style={styles.viewButtonText}>Ver tareas</Text>
+                <Ionicons name="chevron-forward" size={16} color="#2D4A53" />
               </TouchableOpacity>
-              {elemento.completada && (
-                <Text style={styles.completedText}>Completada</Text>
-              )}
-            </View>
-          )}
-          <View style={styles.iconButtons}>
-            <TouchableOpacity
-              style={[styles.iconButton, styles.editButton]}
-              onPress={() => onUpdate(elemento)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="create-outline" size={20} color="white" />
-            </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              style={[styles.iconButton, styles.deleteButton]}
-              onPress={() => onDelete(elemento.id_grupo.toString())}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={20} color="white" />
-            </TouchableOpacity>
+            {elemento.tipo === "tarea" && (
+              <View style={styles.completionContainer}>
+                <TouchableOpacity
+                  onPress={() => onComplete && onComplete(elemento.id_tarea)}
+                  style={styles.checkboxContainer}
+                >
+                  <Ionicons
+                    name={elemento.completada ? "checkbox" : "square-outline"}
+                    size={24}
+                    color={elemento.completada ? "#2D4A53" : "#5A636A"}
+                  />
+                </TouchableOpacity>
+                {elemento.completada && (
+                  <Text style={styles.completedText}>Completada</Text>
+                )}
+              </View>
+            )}
+
+            <View style={styles.iconButtons}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => onUpdate(elemento)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="create-outline" size={18} color="white" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.iconButton, styles.deleteButton]}
+                onPress={() => onDelete(elemento.id_grupo.toString())}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={18} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -123,7 +125,6 @@ export const Item = ({
   );
 };
 
-// Helper function to format date
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = {
     year: "numeric",
@@ -136,84 +137,84 @@ const formatDate = (dateString: string) => {
 const styles = StyleSheet.create({
   cardContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  card: {
+    borderRadius: 12,
+    padding: 5, // Borde visible
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: "#69818D",
+  },
+  innerCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10, // Un poco menos que el card para que se vea el borde
+    padding: 14,
+    flex: 1,
+  },
+  content: {
+    marginBottom: 12,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#132E35",
+    marginBottom: 4,
+  },
+  date: {
+    fontSize: 13,
+    color: "#5A636A",
+    opacity: 0.8,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "#E8ECEF",
+  },
+  viewButtonText: {
+    color: "#2D4A53",
+    fontSize: 14,
+    marginRight: 4,
+    fontWeight: "500",
   },
   completionContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 12, // Espacio entre el checkbox y los botones de acción
   },
   checkboxContainer: {
-    marginRight: 8, // Espacio entre el checkbox y el texto
+    marginRight: 8,
   },
   completedText: {
-    fontSize: 18,
-    color: colors.primary,
-    marginLeft: 4,
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flex: 1, // Asegura que el contenedor use todo el espacio disponible
-  },
-  card: {
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: "hidden",
-  },
-  content: {
-    marginBottom: 16,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  date: {
-    fontSize: 14,
-    opacity: 0.9,
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    minWidth: 120,
-    justifyContent: "center",
-    gap: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 13,
+    color: "#2D4A53",
+    fontStyle: "italic",
   },
   iconButtons: {
     flexDirection: "row",
-    gap: 12,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  editButton: {
-    backgroundColor: colors.primary,
+    alignItems: "center",
+    marginLeft: 8,
+    backgroundColor: "#2D4A53",
   },
   deleteButton: {
-    backgroundColor: colors.error,
+    backgroundColor: "#5A636A",
   },
 });

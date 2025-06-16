@@ -281,8 +281,9 @@ export const ModalGuardar = (props: Props) => {
               : "Nueva tarea"}
           </Text>
 
-          {props.tipo === "grupo" && (
-            <View>
+          {/* Contenido desplazable */}
+          <ScrollView>
+            {props.tipo === "grupo" && (
               <View>
                 <TextInput
                   style={styles.input}
@@ -291,142 +292,146 @@ export const ModalGuardar = (props: Props) => {
                   placeholder="Nombre del Grupo"
                   placeholderTextColor="#999"
                 />
-              </View>
-              <View style={styles.colorPickerWrapper}>
-                <ColorPickerComponent
-                  onColorSelected={handleChageColor}
-                  initialColor={grupo.color || "#3498db"}
-                />
-              </View>
-            </View>
-          )}
-
-          {props.tipo === "tarea" && (
-            <View>
-              <TextInput
-                style={styles.input}
-                onChangeText={(text) => handleOnChange("titulo", text)}
-                value={tarea.titulo}
-                placeholder="Título de la Tarea"
-                placeholderTextColor="#999"
-              />
-
-              <TextInput
-                style={[styles.input, styles.multilineInput]}
-                onChangeText={(text) => handleOnChange("descripcion", text)}
-                value={tarea.descripcion || ""}
-                placeholder="Descripción"
-                placeholderTextColor="#999"
-                multiline
-              />
-
-              <View style={styles.dateContainer}>
-                <Text style={styles.label}>Fecha de vencimiento:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  style={styles.dateButton}
-                >
-                  <Text>
-                    {tarea.fecha_vencimiento
-                      ? parseStringToDate(
-                          tarea.fecha_vencimiento
-                        ).toLocaleDateString()
-                      : "Seleccionar fecha"}
-                  </Text>
-                </TouchableOpacity>
-
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={parseStringToDate(tarea.fecha_vencimiento)}
-                    mode="date"
-                    display="default"
-                    onChange={(event, selectedDate) => {
-                      setShowDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
-                        handleOnChange("fecha_vencimiento", selectedDate);
-                      }
-                    }}
+                <View style={styles.colorPickerWrapper}>
+                  <ColorPickerComponent
+                    onColorSelected={handleChageColor}
+                    initialColor={grupo.color || "#3498db"}
                   />
-                )}
+                </View>
               </View>
+            )}
 
-              <View style={styles.priorityContainer}>
-                <Text style={styles.label}>Prioridad:</Text>
-                <Picker
-                  selectedValue={tarea.prioridad || "baja"}
-                  onValueChange={(value) => handleOnChange("prioridad", value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Baja" value="baja" />
-                  <Picker.Item label="Media" value="media" />
-                  <Picker.Item label="Alta" value="alta" />
-                </Picker>
-              </View>
+            {props.tipo === "tarea" && (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  onChangeText={(text) => handleOnChange("titulo", text)}
+                  value={tarea.titulo}
+                  placeholder="Título de la Tarea"
+                  placeholderTextColor="#999"
+                />
 
-              <View style={styles.subtareasContainer}>
-                <Text style={styles.sectionTitle}>Subtareas</Text>
-                <ScrollView
-                  style={styles.subtareasScroll}
-                  contentContainerStyle={{ paddingRight: 8 }} // Añadir padding para evitar cortes
-                >
-                  {tarea.subtareas.map((subtarea, index) => (
-                    <View key={index} style={styles.subtareaContainer}>
-                      <TextInput
-                        style={[styles.input, styles.subtareaInput]}
-                        onChangeText={(value) =>
-                          handleSubtareaChange(index, "titulo", value)
-                        }
-                        value={subtarea.titulo}
-                        placeholder={`Subtarea ${index + 1}`}
-                        placeholderTextColor="#999"
-                      />
-                      <View style={styles.subtareaActions}>
-                        <Switch
-                          value={subtarea.completada}
-                          onValueChange={(value) =>
-                            handleSubtareaChange(index, "completada", value)
-                          }
-                        />
-                        {tarea.subtareas.length > 1 && (
-                          <TouchableOpacity
-                            onPress={() => eliminarSubtarea(index)}
-                            style={styles.deleteButton}
-                          >
-                            <Ionicons
-                              name="trash-outline"
-                              size={20}
-                              color="#a4262c"
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
-                  ))}
+                <TextInput
+                  style={[styles.input, styles.multilineInput]}
+                  onChangeText={(text) => handleOnChange("descripcion", text)}
+                  value={tarea.descripcion || ""}
+                  placeholder="Descripción"
+                  placeholderTextColor="#999"
+                  multiline
+                />
+
+                <View style={styles.dateContainer}>
+                  <Text style={styles.label}>Fecha de vencimiento:</Text>
                   <TouchableOpacity
-                    onPress={agregarSubtarea}
-                    style={styles.addButton}
+                    onPress={() => setShowDatePicker(true)}
+                    style={styles.dateButton}
                   >
-                    <Text style={styles.addButtonText}>+ Agregar subtarea</Text>
+                    <Text>
+                      {tarea.fecha_vencimiento
+                        ? parseStringToDate(
+                            tarea.fecha_vencimiento
+                          ).toLocaleDateString()
+                        : "Seleccionar fecha"}
+                    </Text>
                   </TouchableOpacity>
-                </ScrollView>
+
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={parseStringToDate(tarea.fecha_vencimiento)}
+                      mode="date"
+                      display="default"
+                      onChange={(event, selectedDate) => {
+                        setShowDatePicker(false);
+                        if (event.type === "set" && selectedDate) {
+                          handleOnChange("fecha_vencimiento", selectedDate);
+                        }
+                      }}
+                    />
+                  )}
+                </View>
+
+                <View style={styles.priorityContainer}>
+                  <Text style={styles.label}>Prioridad:</Text>
+                  <Picker
+                    selectedValue={tarea.prioridad || "baja"}
+                    onValueChange={(value) =>
+                      handleOnChange("prioridad", value)
+                    }
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Baja" value="baja" />
+                    <Picker.Item label="Media" value="media" />
+                    <Picker.Item label="Alta" value="alta" />
+                  </Picker>
+                </View>
+
+                <View style={styles.subtareasContainer}>
+                  <Text style={styles.sectionTitle}>Subtareas</Text>
+                  <View>
+                    {tarea.subtareas.map((subtarea, index) => (
+                      <View key={index} style={styles.subtareaContainer}>
+                        <TextInput
+                          style={[styles.input, styles.subtareaInput]}
+                          onChangeText={(value) =>
+                            handleSubtareaChange(index, "titulo", value)
+                          }
+                          value={subtarea.titulo}
+                          placeholder={`Subtarea ${index + 1}`}
+                          placeholderTextColor="#999"
+                        />
+                        <View style={styles.subtareaActions}>
+                          <Switch
+                            value={subtarea.completada}
+                            onValueChange={(value) =>
+                              handleSubtareaChange(index, "completada", value)
+                            }
+                          />
+                          {tarea.subtareas.length > 1 && (
+                            <TouchableOpacity
+                              onPress={() => eliminarSubtarea(index)}
+                              style={styles.deleteButton}
+                            >
+                              <Ionicons
+                                name="trash-outline"
+                                size={20}
+                                color="#a4262c"
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                    <TouchableOpacity
+                      onPress={agregarSubtarea}
+                      style={styles.addButton}
+                    >
+                      <Text style={styles.addButtonText}>
+                        + Agregar subtarea
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
+            )}
+          </ScrollView>
+
+          {/* Botones fijos */}
+          <View style={styles.fixedFooter}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonCancel]}
+                onPress={() => handleActions("cancel", grupo)}
+              >
+                <Text style={styles.buttonCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSave]}
+                onPress={getButtonAction()}
+              >
+                <Text style={styles.buttonSaveText}>{getButtonText()}</Text>
+              </TouchableOpacity>
             </View>
-          )}
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonSave]}
-              onPress={getButtonAction()}
-            >
-              <Text style={styles.buttonText}>{getButtonText()}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.buttonCancel]}
-              onPress={() => handleActions("cancel", grupo)}
-            >
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -439,74 +444,83 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(13, 31, 35, 0.7)",
+  },
+  fixedFooter: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E8ECEF",
   },
   modalView: {
-    width: "95%", // más ancho para asegurar buen espacio en pantallas pequeñas
-    maxWidth: 500, // limitar en pantallas grandes
-    backgroundColor: "white",
-    borderRadius: 8,
+    width: "90%",
+    backgroundColor: "#F5F7FA",
+    borderRadius: 16,
     padding: 24,
-    maxHeight: "90%", // mayor altura disponible
+    maxHeight: "85%",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: "#E8ECEF",
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "600",
-    marginBottom: 20,
-    color: "#323130",
+    marginBottom: 24,
+    color: "#0D1F23",
+    textAlign: "center",
+  },
+  scrollContainer: {
+    paddingBottom: 16,
   },
   input: {
-    height: 40,
-    borderBottomWidth: 1,
-    borderColor: "#edebe9",
-    paddingHorizontal: 8,
+    height: 48,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 16,
     marginBottom: 16,
     fontSize: 16,
-    color: "#323130",
+    color: "#132E35",
+    borderWidth: 1,
+    borderColor: "#E8ECEF",
   },
   multilineInput: {
     height: 100,
     textAlignVertical: "top",
-    borderWidth: 1,
-    borderRadius: 4,
-    padding: 8,
-    marginBottom: 16,
-    borderColor: "#edebe9",
-    color: "#323130",
-    fontSize: 15,
+    paddingTop: 12,
   },
   dateContainer: {
     marginBottom: 16,
   },
   label: {
-    marginBottom: 6,
+    marginBottom: 8,
     fontSize: 14,
-    color: "#605e5c",
+    color: "#5A636A",
+    fontWeight: "500",
   },
   dateButton: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: "#edebe9",
+    height: 48,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E8ECEF",
   },
   priorityContainer: {
     marginBottom: 16,
   },
   picker: {
-    height: 50,
-    width: "100%",
-    color: "#323130",
+    height: 48,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E8ECEF",
   },
   colorPickerWrapper: {
-    marginVertical: 12,
+    marginVertical: 16,
   },
   subtareasContainer: {
     marginBottom: 16,
@@ -514,84 +528,85 @@ const styles = StyleSheet.create({
   subtareasScroll: {
     maxHeight: 150,
     marginBottom: 8,
-    paddingHorizontal: 4,
   },
   sectionTitle: {
     fontWeight: "600",
-    marginBottom: 10,
-    color: "#323130",
+    marginBottom: 12,
+    color: "#0D1F23",
     fontSize: 16,
   },
   subtareaContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
-    paddingHorizontal: 4,
+    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E8ECEF",
   },
   subtareaInput: {
     flex: 1,
-    marginRight: 8,
-    borderBottomWidth: 1,
-    borderColor: "#edebe9",
-    paddingVertical: 6,
+    marginRight: 12,
     fontSize: 15,
-    color: "#323130",
+    color: "#132E35",
   },
   subtareaActions: {
     flexDirection: "row",
     alignItems: "center",
   },
   deleteButton: {
-    marginLeft: 8,
-    width: 28,
-    height: 28,
+    marginLeft: 12,
+    width: 32,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
-  },
-  deleteButtonText: {
-    color: "#a4262c",
-    fontSize: 20,
+    backgroundColor: "#FAE6E6",
+    borderRadius: 16,
   },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    marginTop: 4,
+    padding: 12,
+    backgroundColor: "#E8ECEF",
+    borderRadius: 8,
+    justifyContent: "center",
+    marginTop: 8,
   },
   addButtonText: {
-    color: "#0078d4",
+    color: "#2D4A53",
     fontSize: 15,
-    marginLeft: 6,
+    fontWeight: "500",
+    marginLeft: 8,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    flexWrap: "wrap",
     marginTop: 24,
   },
   button: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     marginLeft: 12,
-    minWidth: 80,
+    minWidth: 100,
     alignItems: "center",
+    justifyContent: "center",
   },
   buttonSave: {
-    backgroundColor: "#0078d4",
+    backgroundColor: "#2D4A53",
   },
   buttonCancel: {
-    backgroundColor: "transparent",
+    backgroundColor: "#E8ECEF",
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
   },
   buttonCancelText: {
-    color: "#0078d4",
+    color: "#5A636A",
   },
   buttonSaveText: {
-    color: "white",
+    color: "#FFFFFF",
   },
 });

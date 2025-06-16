@@ -1,6 +1,7 @@
+import CustomAlert from "@/Components/CustomAlert";
+import { useAlert } from "@/hooks/useAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { ReactNode, createContext, useEffect, useState } from "react";
-import { Alert } from "react-native";
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
@@ -22,6 +23,7 @@ interface AuthContextType {
 }
 
 export const AuhtProvider = ({ children }: AuthContextProps) => {
+  const { alertConfig, showAlert, hideAlert } = useAlert();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -68,12 +70,13 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
       });
       const data = await response.json();
       if (!response.ok) {
-        Alert.alert("Error", data.error);
+        showAlert("Error", data.error, "error");
         return;
       }
-      Alert.alert("Success", data.success);
+      showAlert("Éxito", data.success, "success");
       return data;
     } catch (error) {
+      showAlert("Error", "Ocurrió un error inesperado", "error");
       console.log(error);
     }
   };
@@ -88,12 +91,15 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
       });
       const data = await response.json();
       if (!response.ok) {
+        showAlert("Error", "Credenciales incorrectas", "error");
         return { success: false };
       }
+      showAlert("Éxito", "La acción se completó correctamente", "success");
       setUser(data.user);
       await userPersister(data.user);
       return { success: true };
     } catch (error) {
+      showAlert("Error", "Error de conexión", "error");
       console.log(error);
     }
   };
@@ -101,6 +107,13 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
     <AuthContext.Provider
       value={{ user, setUser, loading, setLoading, register, login, logout }}
     >
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onDismiss={hideAlert}
+      />
       {children}
     </AuthContext.Provider>
   );

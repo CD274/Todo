@@ -3,9 +3,10 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ColorPicker from "react-native-wheel-color-picker";
 interface ColorPickerProps {
   onColorSelected: (color: string) => void;
+  initialColor?: string;
 }
 const ColorPickerComponent = ({ onColorSelected }: ColorPickerProps) => {
-  const [color, setColor] = useState("#FF0000");
+  const [color, setColor] = useState("#0D1F23");
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   const handleColorChange = (newColor: string) => {

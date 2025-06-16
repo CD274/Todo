@@ -1,70 +1,94 @@
-// Login.js
 import { useAuth } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import {
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { authStyles } from "../../../styles/authStyles";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const navigation = useNavigation();
-  useEffect(() => {
-    if (user) {
-      navigation.navigate("Home");
-    }
-  }, [user]);
+
   const handleLogin = async () => {
     try {
-      const result = await login({ email, password });
-      if (result.success) {
-        Alert.alert("Inicio de sesión exitoso: ", result.message);
-      } else {
-        Alert.alert("Error al iniciar sesión");
-      }
+      await login({ email, password });
     } catch (error) {
       console.log(error);
     }
   };
+
   return (
     <View style={authStyles.container}>
-      <TouchableOpacity
-        style={authStyles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={authStyles.backButtonText}>← Volver</Text>
-      </TouchableOpacity>
+      <StatusBar barStyle="light-content" backgroundColor="#0D1F23" />
 
-      <Text style={authStyles.title}>Iniciar Sesión</Text>
+      {/* Barra de navegación superior */}
+      <View style={authStyles.navBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={authStyles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#AFB3B7" />
+        </TouchableOpacity>
+        <Text style={authStyles.navTitle}>Iniciar sesión</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      <TextInput
-        style={authStyles.input}
-        placeholder="Correo electrónico"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+      <View style={authStyles.content}>
+        <Text style={authStyles.title}>Bienvenido</Text>
 
-      <TextInput
-        style={authStyles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          style={authStyles.input}
+          placeholder="Correo electrónico"
+          placeholderTextColor="#999"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      <TouchableOpacity style={authStyles.button} onPress={() => handleLogin()}>
-        <Text style={authStyles.buttonText}>Ingresar</Text>
-      </TouchableOpacity>
+        <TextInput
+          style={authStyles.input}
+          placeholder="Contraseña"
+          placeholderTextColor="#999"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      <TouchableOpacity onPress={() => navigation.navigate("ForgetPass")}>
-        <Text style={authStyles.linkText}>¿Olvidaste tu contraseña?</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={authStyles.button}
+          onPress={handleLogin}
+          activeOpacity={0.8}
+        >
+          <Text style={authStyles.buttonText}>Ingresar</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={authStyles.linkText}>Crear una cuenta</Text>
-      </TouchableOpacity>
+        <View style={authStyles.linksContainer}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgetPass")}
+            activeOpacity={0.7}
+          >
+            <Text style={authStyles.linkText}>¿Olvidaste tu contraseña?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Register")}
+            activeOpacity={0.7}
+          >
+            <Text style={[authStyles.linkText, { marginTop: 16 }]}>
+              Crear una cuenta
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 };

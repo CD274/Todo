@@ -1,27 +1,15 @@
 import { grupos } from "@/db/schema";
-import { useFocusEffect } from "@react-navigation/native";
 import { eq } from "drizzle-orm";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
+import { Header } from "@/Components/header";
 import { ModalGuardar } from "@/Components/modal";
-import { useAuth } from "@/context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  Alert,
-  FlatList,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Item } from "../../../Components/Item";
 import { useDatabase } from "../../../context/DatabaseContext";
 import migrations from "../../../drizzle/migrations";
-import { colors } from "../../../theme/colors";
 interface GroupData {
   id_grupo: number;
   nombre: string;
@@ -35,53 +23,58 @@ const Home = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<GroupData[]>([]);
   const [editingGroup, setEditingGroup] = useState<GroupData>();
-  const { logout } = useAuth();
-  useFocusEffect(
-    React.useCallback(() => {
-      let isActive = true;
-      const loadData = async () => {
-        try {
-          const groups = await db.select().from(grupos).all();
-          const stringGorups = groups.map((grupos) => ({
-            id_grupo: grupos.id_grupo,
-            nombre: grupos.nombre,
-            color: grupos.color,
-            fecha_creacion: grupos.fecha_creacion,
-          }));
-          if (isActive) {
-            setData(stringGorups);
-          }
-          if (groups.length === 0) {
-            const result = await db
-              .insert(grupos)
-              .values({
-                id_grupo: 1,
-                nombre: "Grupo 1",
-                color: "#FF0000",
-                fecha_creacion: new Date().toISOString(),
-              })
-              .returning();
-            setData((prev) => [
-              ...prev,
-              {
-                id_grupo: result[0].id_grupo,
-                nombre: result[0].nombre,
-                color: result[0].color,
-                fecha_creacion: result[0].fecha_creacion,
-              },
-            ]);
-          }
-        } catch (error) {
-          console.error("Error al cargar los datos:", error);
-          if (isActive) {
-            // Opcional: Mostrar estado de error
-            setData([]);
-          }
+  useEffect(() => {
+    let isActive = true;
+
+    const loadData = async () => {
+      try {
+        const groups = await db.select().from(grupos).all();
+        const stringGroups = groups.map((grupo) => ({
+          id_grupo: grupo.id_grupo,
+          nombre: grupo.nombre,
+          color: grupo.color,
+          fecha_creacion: grupo.fecha_creacion,
+        }));
+
+        if (isActive) {
+          setData(stringGroups);
         }
-      };
-      loadData();
-    }, [])
-  );
+
+        if (groups.length === 0) {
+          const result = await db
+            .insert(grupos)
+            .values({
+              id_grupo: 1,
+              nombre: "Grupo 1",
+              color: "#FF0000",
+              fecha_creacion: new Date().toISOString(),
+            })
+            .returning();
+
+          setData((prev) => [
+            ...prev,
+            {
+              id_grupo: result[0].id_grupo,
+              nombre: result[0].nombre,
+              color: result[0].color,
+              fecha_creacion: result[0].fecha_creacion,
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error al cargar los datos:", error);
+        if (isActive) {
+          setData([]);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isActive = false;
+    };
+  }, [db]);
 
   if (error) {
     return <Text>{error.message}</Text>;
@@ -156,29 +149,9 @@ const Home = () => {
   };
   const handleUpdate = (group: GroupData) => {
     setEditingGroup(group);
-    console.log(
-      "Este es el usuario seleccionado:" + JSON.stringify(editingGroup)
-    );
     setModalVisible(true);
   };
-  const handleLogout = () => {
-    Alert.alert(
-      "Cerrar sesión",
-      "¿Estás seguro que deseas salir de tu cuenta?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Cerrar sesión",
-          style: "destructive",
-          onPress: () => logout(),
-        },
-      ],
-      { cancelable: true }
-    );
-  };
+
   const renderItem = ({ item }: { item: GroupData }) =>
     item && (
       <Item
@@ -189,31 +162,7 @@ const Home = () => {
     );
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.primary} />
-
-      <View style={styles.header}>
-        <Text style={styles.title}>To Do</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Ionicons name="log-out-outline" size={24} color="#0078d4" />
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.welcomeText}>Bienvenido a To Do</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Base de datos lista</Text>
-          <Text style={styles.cardText}>
-            Puedes comenzar a gestionar tus datos.
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.addButton} onPress={handleModal}>
-          <Ionicons name="add-circle" size={24} color="white" />
-          <Text style={styles.addButtonText}>Crear un grupo de tareas</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      <Header handleModal={handleModal} tipo="grupo" />
       <FlatList
         data={data}
         renderItem={({ item }: { item: GroupData }) => renderItem({ item })}
@@ -238,95 +187,121 @@ const Home = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F5F7FA",
   },
   header: {
-    backgroundColor: colors.primary,
-    padding: 16,
+    backgroundColor: "#0D1F23",
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     elevation: 4,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "white",
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#AFB3B7",
+    letterSpacing: 0.5,
   },
-  content: {
-    padding: 20,
-  },
-  welcomeText: {
-    fontSize: 18,
-    marginBottom: 20,
-    color: colors.text,
-    textAlign: "center",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 10,
+  addButton: {
+    flexDirection: "row",
+    backgroundColor: "#2D4A53",
     padding: 16,
-    marginBottom: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 20,
+    marginTop: 24,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: colors.primary,
-  },
-  cardText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  addButton: {
-    flexDirection: "row",
-    backgroundColor: colors.primary,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-  },
   addButtonText: {
-    color: "white",
+    color: "#AFB3B7",
     marginLeft: 10,
-    fontWeight: "bold",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#ffecec",
-  },
-  errorText: {
-    color: "red",
+    fontWeight: "500",
     fontSize: 16,
-    textAlign: "center",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.text,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     padding: 8,
-    borderRadius: 4,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   logoutText: {
-    color: "#0078d4",
-    marginLeft: 8,
+    color: "#AFB3B7",
+    marginLeft: 6,
     fontSize: 14,
+    fontWeight: "500",
+  },
+  cardContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: "#69818D",
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#132E35",
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 13,
+    color: "#5A636A",
+    opacity: 0.8,
+  },
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "#E8ECEF",
+  },
+  viewButtonText: {
+    color: "#2D4A53",
+    fontSize: 14,
+    marginRight: 4,
+    fontWeight: "500",
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+    backgroundColor: "#2D4A53",
+  },
+  completedText: {
+    fontSize: 13,
+    color: "#2D4A53",
+    fontStyle: "italic",
   },
 });
 

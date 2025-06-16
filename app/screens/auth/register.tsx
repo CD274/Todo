@@ -1,14 +1,22 @@
-// Register.js
 import { useAuth } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { authStyles } from "../../../styles/authStyles";
+
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
   const { register } = useAuth();
+
   const handleRegister = async () => {
     try {
       await register({ email: email, password: password });
@@ -16,43 +24,64 @@ const Register = () => {
       console.log(error);
     }
   };
+
   return (
     <View style={authStyles.container}>
-      <TouchableOpacity
-        style={authStyles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={authStyles.backButtonText}>← Volver</Text>
-      </TouchableOpacity>
+      <StatusBar barStyle="light-content" backgroundColor="#0D1F23" />
 
-      <Text style={authStyles.title}>Registro</Text>
-      <TextInput
-        style={authStyles.input}
-        placeholder="Correo electrónico"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={authStyles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      {/* Barra de navegación superior */}
+      <View style={authStyles.navBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={authStyles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#AFB3B7" />
+        </TouchableOpacity>
+        <Text style={authStyles.navTitle}>Crear cuenta</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      <TouchableOpacity
-        style={authStyles.button}
-        onPress={() => handleRegister()}
-      >
-        <Text style={authStyles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
+      <View style={authStyles.content}>
+        <Text style={authStyles.title}>Registro</Text>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={authStyles.linkText}>
-          ¿Ya tienes cuenta? Inicia sesión
-        </Text>
-      </TouchableOpacity>
+        <TextInput
+          style={authStyles.input}
+          placeholder="Correo electrónico"
+          placeholderTextColor="#999"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
+
+        <TextInput
+          style={authStyles.input}
+          placeholder="Contraseña"
+          placeholderTextColor="#999"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        <TouchableOpacity
+          style={authStyles.button}
+          onPress={handleRegister}
+          activeOpacity={0.8}
+        >
+          <Text style={authStyles.buttonText}>Registrarse</Text>
+        </TouchableOpacity>
+
+        <View style={authStyles.linksContainer}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Login")}
+            activeOpacity={0.7}
+          >
+            <Text style={authStyles.linkText}>
+              ¿Ya tienes cuenta? Inicia sesión
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 };
