@@ -44,6 +44,7 @@ app.post("/register", validateData, async (req, res) => {
         }
         return res.status(500).json({ error: "Registration failed" });
       }
+      console.log(`A new user has been registered: ${this.lastID}`);
       res.status(201).json({ success: "User registered" });
     });
   } catch (err) {
