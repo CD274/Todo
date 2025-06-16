@@ -49,7 +49,6 @@ const Login = () => {
           placeholder="Correo electrónico"
           placeholderTextColor="#999"
           keyboardType="email-address"
-          autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
         />

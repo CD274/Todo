@@ -16,7 +16,7 @@ export interface Tarea {
   descripcion: string | null;
   completada: boolean | null;
   fecha_creacion: string | null;
-  fecha_vencimiento: string | null;
+  fecha_vencimiento: string;
   prioridad: "baja" | "media" | "alta" | null;
 }
 
@@ -63,11 +63,18 @@ export const Item = ({
               {"nombre" in elemento ? elemento.nombre : elemento.titulo}
             </Text>
 
-            {elemento.fecha_creacion && (
-              <Text style={styles.date}>
-                {formatDate(elemento.fecha_creacion)}
-              </Text>
-            )}
+            <View style={styles.datesContainer}>
+              {elemento.fecha_creacion && (
+                <Text style={styles.date}>
+                  {formatDate(elemento.fecha_creacion)}
+                </Text>
+              )}
+              {elemento.tipo === "tarea" && elemento.fecha_vencimiento && (
+                <Text style={[styles.date, styles.dueDate]}>
+                  {formatDate(elemento.fecha_vencimiento)}
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Actions */}
@@ -139,6 +146,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
   },
+
   card: {
     borderRadius: 12,
     padding: 5, // Borde visible
@@ -159,6 +167,14 @@ const styles = StyleSheet.create({
   },
   content: {
     marginBottom: 12,
+  },
+  datesContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  dueDate: {
+    fontWeight: "bold",
+    color: "red",
   },
   name: {
     fontSize: 16,

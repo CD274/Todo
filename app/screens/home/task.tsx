@@ -90,6 +90,8 @@ const Task = () => {
   );
 
   const saveData = async (nuevaTarea: TaskProps) => {
+    nuevaTarea.fecha_creacion = new Date().toISOString();
+    console.log("Tarea que se va a guardar: " + JSON.stringify(nuevaTarea));
     try {
       const result = await db.transaction(async (tx) => {
         // Guardar la tarea principal
@@ -100,7 +102,7 @@ const Task = () => {
             titulo: nuevaTarea.titulo,
             descripcion: nuevaTarea.descripcion,
             completada: nuevaTarea.completada,
-            fecha_creacion: new Date().toISOString(),
+            fecha_creacion: nuevaTarea.fecha_creacion,
             fecha_vencimiento: nuevaTarea.fecha_vencimiento,
             prioridad: nuevaTarea.prioridad,
           })
@@ -223,7 +225,6 @@ const Task = () => {
       console.error("Error al eliminar tarea:", error);
     }
   };
-
   const handleModal = () => {
     setModalVisible(!isModalVisible);
   };
