@@ -1,8 +1,17 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+export const users = sqliteTable("user", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+});
+
 export const grupos = sqliteTable("grupos", {
   id_grupo: integer("id_grupo").primaryKey({ autoIncrement: true }),
+  usuario_id: integer("usuario_id")
+    .notNull()
+    .references(() => users.id),
   nombre: text("nombre").notNull(),
   color: text("color").default("#0078D7"),
   fecha_creacion: text("fecha_creacion").default(sql`CURRENT_TIMESTAMP`),
@@ -16,6 +25,7 @@ export const tareas = sqliteTable("tareas", {
   titulo: text("titulo").notNull(),
   descripcion: text("descripcion"),
   completada: integer("completada", { mode: "boolean" }).default(false),
+  isDaily: integer("isDaily", { mode: "boolean" }), // Nuevo campo opcional
   fecha_creacion: text("fecha_creacion").default(sql`CURRENT_TIMESTAMP`),
   fecha_vencimiento: text("fecha_vencimiento"),
   prioridad: text("prioridad", { enum: ["baja", "media", "alta"] }).default(

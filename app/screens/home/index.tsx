@@ -26,7 +26,7 @@ const Home = () => {
     let isActive = true;
     const loadData = async () => {
       try {
-        const groups = await db.select().from(grupos).all();
+        const groups = await db.select().from(grupos);
         const stringGroups = groups.map((grupo) => ({
           id_grupo: grupo.id_grupo,
           nombre: grupo.nombre,

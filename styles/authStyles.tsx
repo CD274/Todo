@@ -63,6 +63,9 @@ export const authStyles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+    paddingHorizontal: 24,
+    marginLeft: 12,
+    minWidth: 100,
   },
   buttonText: {
     color: "#FFFFFF",
@@ -80,5 +83,60 @@ export const authStyles = StyleSheet.create({
   linksContainer: {
     marginTop: 24,
     alignItems: "center",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(13, 31, 35, 0.7)",
+  },
+  modalView: {
+    width: "90%",
+    backgroundColor: "#F5F7FA",
+    borderRadius: 16,
+    padding: 24,
+    maxHeight: "60%", // Ajusta según necesidad
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#E8ECEF",
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    marginBottom: 24,
+    color: "#0D1F23",
+    textAlign: "center",
+  },
+  scrollContainer: {
+    paddingBottom: 16,
+  },
+  fixedFooter: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E8ECEF",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  buttonSave: {
+    backgroundColor: "#2D4A53",
+  },
+  buttonCancel: {
+    backgroundColor: "#E8ECEF",
+  },
+  buttonSaveText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  buttonCancelText: {
+    color: "#5A636A",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

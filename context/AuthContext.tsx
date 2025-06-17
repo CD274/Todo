@@ -1,4 +1,5 @@
 import CustomAlert from "@/Components/CustomAlert";
+import { useDatabase } from "@/context/DatabaseContext";
 import { useAlert } from "@/hooks/useAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { ReactNode, createContext, useEffect, useState } from "react";
@@ -20,9 +21,12 @@ interface AuthContextType {
   register: ({ email, password }: User) => Promise<any>; // o Promise<ResponseData>
   login: ({ email, password }: User) => Promise<any>; // o Promise<ResponseData>
   logout: () => Promise<void>;
+  validateEmail: (email: string) => Promise<any>;
+  resetPassword: ({ email, password }: User) => Promise<any>;
 }
 
 export const AuhtProvider = ({ children }: AuthContextProps) => {
+  const db = useDatabase();
   const { alertConfig, showAlert, hideAlert } = useAlert();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +63,16 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   const logout = async () => {
     await clearUser();
   };
+  const localRegister = async ({ email, password }: User) => {
+    try {
+      const result = await db.insert(user).values({ email, password });
+      if (result) {
+        await userPersister({ email, password });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const register = async ({ email, password }: User) => {
     try {
       const response = await fetch("http://192.168.1.108:3000/register", {
@@ -74,10 +88,55 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
         return;
       }
       showAlert("Éxito", data.success, "success");
+      localRegister({ email, password });
       return data;
     } catch (error) {
       showAlert("Error", "Ocurrió un error inesperado", "error");
       console.log(error);
+    }
+  };
+  const validateEmail = async (email: string) => {
+    try {
+      const response = await fetch(
+        "http://192.168.1.108:3000/forgot-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        showAlert("Error", data.error, "error");
+        return;
+      }
+      return data;
+    } catch (error) {
+      showAlert("Error", "Ocurrió un error inesperado", "error");
+      console.log(error);
+    }
+  };
+  const resetPassword = async ({ email, password }: User) => {
+    try {
+      const response = await fetch("http://192.168.1.108:3000/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, newPassword: password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        showAlert("Error", data.error, "error");
+        return;
+      }
+      showAlert("Éxito", data.success, "success");
+      return data;
+    } catch (error) {
+      showAlert("Error", "Ocurrio un error inesperado", "error");
+      console.log("Error del try", error);
     }
   };
   const login = async ({ email, password }: User) => {
@@ -105,7 +164,17 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   };
   return (
     <AuthContext.Provider
-      value={{ user, setUser, loading, setLoading, register, login, logout }}
+      value={{
+        user,
+        setUser,
+        loading,
+        setLoading,
+        register,
+        login,
+        logout,
+        validateEmail,
+        resetPassword,
+      }}
     >
       <CustomAlert
         visible={alertConfig.visible}

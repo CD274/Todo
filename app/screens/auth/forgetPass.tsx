@@ -1,7 +1,10 @@
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import React, { useState } from "react";
 import {
+  Modal,
+  ScrollView,
   StatusBar,
   Text,
   TextInput,
@@ -11,8 +14,31 @@ import {
 import { authStyles } from "../../../styles/authStyles";
 
 const ForgetPass = () => {
+  const [email, setEmail] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [ismodalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
-
+  const { validateEmail, resetPassword } = useAuth();
+  const handleForgetPass = async () => {
+    try {
+      const data = await validateEmail(email);
+      if (data.success) {
+        setModalVisible(true);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleResetPass = async () => {
+    try {
+      const data = await resetPassword({ email, password: newPassword });
+      if (data.success) {
+        setModalVisible(false);
+      }
+    } catch (error) {
+      console.log("Error del handleResetPass: ", error);
+    }
+  };
   return (
     <View style={authStyles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D1F23" />
@@ -37,15 +63,15 @@ const ForgetPass = () => {
           placeholder="Correo electrónico"
           placeholderTextColor="#999"
           keyboardType="email-address"
-          autoCapitalize="none"
+          onChange={(e) => setEmail(e.nativeEvent.text)}
         />
 
         <TouchableOpacity
           style={authStyles.button}
-          onPress={() => alert("Correo de recuperación enviado")}
+          onPress={() => handleForgetPass()}
           activeOpacity={0.8}
         >
-          <Text style={authStyles.buttonText}>Enviar enlace</Text>
+          <Text style={authStyles.buttonText}>Recuperar contraseña</Text>
         </TouchableOpacity>
 
         <View style={authStyles.linksContainer}>
@@ -55,6 +81,52 @@ const ForgetPass = () => {
           >
             <Text style={authStyles.linkText}>Volver al inicio de sesión</Text>
           </TouchableOpacity>
+        </View>
+        <View>
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={ismodalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={authStyles.centeredView}>
+              <View style={authStyles.modalView}>
+                <Text style={authStyles.modalTitle}>Cambiar Contraseña</Text>
+
+                <ScrollView style={authStyles.scrollContainer}>
+                  <TextInput
+                    style={authStyles.input}
+                    placeholder="Nueva Contraseña"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    onChangeText={(text) => setNewPassword(text)}
+                  />
+                </ScrollView>
+
+                <View style={authStyles.fixedFooter}>
+                  <View style={authStyles.buttonContainer}>
+                    <TouchableOpacity
+                      style={[authStyles.button, authStyles.buttonCancel]}
+                      onPress={() => setModalVisible(false)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={authStyles.buttonCancelText}>Cancelar</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[authStyles.button, authStyles.buttonSave]}
+                      onPress={handleResetPass}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={authStyles.buttonSaveText}>
+                        Cambiar Contraseña
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
       </View>
     </View>

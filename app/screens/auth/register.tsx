@@ -20,6 +20,8 @@ const Register = () => {
   const handleRegister = async () => {
     try {
       await register({ email: email, password: password });
+      setEmail("");
+      setPassword("");
     } catch (error) {
       console.log(error);
     }
@@ -56,7 +58,7 @@ const Register = () => {
 
         <TextInput
           style={authStyles.input}
-          placeholder="Contraseña"
+          placeholder="Ejemplo de Contraseña: Seguro#2025"
           placeholderTextColor="#999"
           secureTextEntry
           value={password}

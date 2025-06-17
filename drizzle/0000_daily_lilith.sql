@@ -1,8 +1,10 @@
 CREATE TABLE `grupos` (
 	`id_grupo` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`usuario_id` integer NOT NULL,
 	`nombre` text NOT NULL,
 	`color` text DEFAULT '#0078D7',
-	`fecha_creacion` text DEFAULT CURRENT_TIMESTAMP
+	`fecha_creacion` text DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (`usuario_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `subtareas` (
@@ -19,8 +21,17 @@ CREATE TABLE `tareas` (
 	`titulo` text NOT NULL,
 	`descripcion` text,
 	`completada` integer DEFAULT false,
+	`isDaily` integer,
 	`fecha_creacion` text DEFAULT CURRENT_TIMESTAMP,
 	`fecha_vencimiento` text,
 	`prioridad` text DEFAULT 'baja',
 	FOREIGN KEY (`id_grupo`) REFERENCES `grupos`(`id_grupo`) ON UPDATE no action ON DELETE no action
 );
+--> statement-breakpoint
+CREATE TABLE `user` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`email` text NOT NULL,
+	`password` text NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);
