@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/expo-sqlite";
 import * as SQLite from "expo-sqlite";
 import { createContext, useContext } from "react";
 
-const DATABASE_NAME = "database.db";
+const DATABASE_NAME = "ps.db";
 const expo = SQLite.openDatabaseSync(DATABASE_NAME);
 const db = drizzle(expo);
 

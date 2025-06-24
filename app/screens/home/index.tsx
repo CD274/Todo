@@ -1,5 +1,6 @@
 import { Header } from "@/Components/header";
 import { ModalGuardar } from "@/Components/modal";
+import { useAuth } from "@/context/AuthContext";
 import { grupos, subtareas, tareas } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
@@ -17,6 +18,7 @@ interface GroupData {
 }
 const Home = () => {
   const db = useDatabase();
+  const { user } = useAuth();
   const { success, error } = useMigrations(db, migrations);
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<GroupData[]>([]);
@@ -26,7 +28,10 @@ const Home = () => {
     let isActive = true;
     const loadData = async () => {
       try {
-        const groups = await db.select().from(grupos);
+        const groups = await db
+          .select()
+          .from(grupos)
+          .where(eq(grupos.usuario_id, user.id));
         const stringGroups = groups.map((grupo) => ({
           id_grupo: grupo.id_grupo,
           nombre: grupo.nombre,
@@ -36,28 +41,6 @@ const Home = () => {
 
         if (isActive) {
           setData(stringGroups);
-        }
-
-        if (groups.length === 0) {
-          const result = await db
-            .insert(grupos)
-            .values({
-              id_grupo: 1,
-              nombre: "Grupo 1",
-              color: "#FF0000",
-              fecha_creacion: new Date().toISOString(),
-            })
-            .returning();
-
-          setData((prev) => [
-            ...prev,
-            {
-              id_grupo: result[0].id_grupo,
-              nombre: result[0].nombre,
-              color: result[0].color,
-              fecha_creacion: result[0].fecha_creacion,
-            },
-          ]);
         }
       } catch (error) {
         console.error("Error al cargar los datos:", error);
@@ -85,6 +68,7 @@ const Home = () => {
       .insert(grupos)
       .values({
         nombre: data.nombre,
+        usuario_id: user.id,
         color: data.color,
         fecha_creacion: new Date().toISOString(),
       })
@@ -192,6 +176,9 @@ const Home = () => {
         onUpdate={() => handleUpdate(item)}
       />
     );
+  const hanleVerUser = () => {
+    console.log("Datos de usuario despues...:", user);
+  };
   return (
     <SafeAreaView style={styles.container}>
       <Header handleModal={handleModal} tipo="grupo" />

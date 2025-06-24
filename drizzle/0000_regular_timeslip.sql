@@ -31,7 +31,7 @@ CREATE TABLE `tareas` (
 CREATE TABLE `user` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`email` text NOT NULL,
-	`password` text NOT NULL
+	`is_active` integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);

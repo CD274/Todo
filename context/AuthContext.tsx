@@ -1,7 +1,11 @@
 import CustomAlert from "@/Components/CustomAlert";
 import { useDatabase } from "@/context/DatabaseContext";
+import * as schema from "@/db/schema";
+import { grupos, subtareas, tareas, users } from "@/db/schema";
 import { useAlert } from "@/hooks/useAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { eq } from "drizzle-orm";
+import { reset } from "drizzle-seed";
 import React, { ReactNode, createContext, useEffect, useState } from "react";
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
@@ -10,8 +14,10 @@ interface AuthContextProps {
   children: ReactNode;
 }
 interface User {
+  id: number;
   email: string;
   password: string;
+  isActive: number;
 }
 interface AuthContextType {
   user: any; // puedes mejorar esto después
@@ -60,14 +66,65 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
       console.error("Error clearing user data:", error);
     }
   };
+  const mostrarBDD = async () => {
+    try {
+      const data = await db
+        .select({
+          // Selección explícita de campos (evita SELECT *)
+          usuario: {
+            id: users.id,
+            email: users.email,
+            isActive: users.isActive,
+          },
+          grupo: {
+            id: grupos.id_grupo,
+            nombre: grupos.nombre,
+            color: grupos.color,
+          },
+          tarea: {
+            id: tareas.id_tarea,
+            titulo: tareas.titulo,
+            prioridad: tareas.prioridad,
+            completada: tareas.completada,
+          },
+          subtarea: {
+            id: subtareas.id_subtarea,
+            titulo: subtareas.titulo,
+            completada: subtareas.completada,
+          },
+        })
+        .from(users)
+        .leftJoin(grupos, eq(grupos.usuario_id, users.id)) // Unión usuario → grupos
+        .leftJoin(tareas, eq(tareas.id_grupo, grupos.id_grupo)) // Unión grupo → tareas
+        .leftJoin(subtareas, eq(subtareas.id_tarea, tareas.id_tarea)) // Unión tarea → subtareas
+        .all();
+
+      console.log(JSON.stringify(data, null, 2)); // Formato legible
+      return data;
+    } catch (error) {
+      console.error("Error en mostrarBDD:", error);
+      throw error; // Propaga el error para manejo externo
+    }
+  };
+  const resetbdd = async () => {
+    try {
+      await AsyncStorage.removeItem("user");
+      await reset(db, schema);
+      setUser(null);
+    } catch (error) {
+      console.error("Error clearing user data:", error);
+    }
+  };
   const logout = async () => {
     await clearUser();
+    // resetbdd();
+    // mostrarBDD();
   };
-  const localRegister = async ({ email, password }: User) => {
+  const localRegister = async (id: number, email: string) => {
     try {
-      const result = await db.insert(user).values({ email, password });
+      const result = await db.insert(users).values({ id, email, isActive: 1 });
       if (result) {
-        await userPersister({ email, password });
+        await userPersister({ id, email, isActive: 1 });
       }
     } catch (error) {
       console.log(error);
@@ -87,8 +144,11 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
         showAlert("Error", data.error, "error");
         return;
       }
+
       showAlert("Éxito", data.success, "success");
-      localRegister({ email, password });
+      if (data.user) {
+        localRegister(data.user.id, data.user.email);
+      }
       return data;
     } catch (error) {
       showAlert("Error", "Ocurrió un error inesperado", "error");

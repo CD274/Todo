@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "94f1e9bd-22fb-400b-970c-fcd73426468d",
+  "id": "6c2a64d1-4f46-4f15-9311-6d16b27089e9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "grupos": {
@@ -225,12 +225,13 @@
           "notNull": true,
           "autoincrement": false
         },
-        "password": {
-          "name": "password",
-          "type": "text",
+        "is_active": {
+          "name": "is_active",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {
