@@ -17,6 +17,7 @@ export interface Tarea {
   completada: boolean | null;
   fecha_creacion: string | null;
   fecha_vencimiento: string;
+  isDaily: boolean | null;
   prioridad: "baja" | "media" | "alta" | null;
 }
 
@@ -44,9 +45,9 @@ export const Item = ({
   onComplete,
 }: { elemento: Elemento } & Actions) => {
   const priorityColors = {
-    alta: "#ffcdd2",
-    media: "#fff9c4",
-    baja: "#bbdefb",
+    alta: "#f67782",
+    media: "#f1e575",
+    baja: "#76b8ef",
     default: "#f0f9ff",
   };
 
@@ -57,6 +58,33 @@ export const Item = ({
       ? priorityColors[elemento.prioridad] || priorityColors.default
       : priorityColors.default;
 
+  const fechaActual = new Date();
+  const fechaVencimiento = elemento.fecha_vencimiento
+    ? new Date(elemento.fecha_vencimiento)
+    : null;
+
+  let colorCard = "#ffffff";
+  let textStyle = {};
+
+  if (elemento.completada) {
+    textStyle = {
+      textDecorationLine: "line-through",
+      color: "#888",
+    };
+  } else if (
+    elemento.tipo === "tarea" &&
+    !elemento.isDaily &&
+    fechaVencimiento
+  ) {
+    if (fechaVencimiento < fechaActual) {
+      colorCard = "#7f9296"; // Rojo claro (atraso)
+    } else if (fechaVencimiento.toDateString() === fechaActual.toDateString()) {
+      colorCard = "#9db7bc"; // Naranja claro (vencimiento hoy)
+    } else {
+      colorCard = "#d1e7ed"; // Azul claro (futuro)
+    }
+  }
+
   const navigation = useNavigation();
 
   const goToTasks = (groupId: number, name: string) => {
@@ -65,12 +93,15 @@ export const Item = ({
 
   return (
     <View style={styles.cardContainer}>
-      <View style={[styles.card, { backgroundColor: cardBackground }]}>
+      <View style={[styles.card, { borderLeftColor: cardBackground }]}>
         {/* Contenedor interno con fondo constante */}
-        <View style={styles.innerCard}>
+        <View style={[styles.innerCard, { backgroundColor: colorCard }]}>
           {/* Main content */}
           <View style={styles.content}>
-            <Text style={styles.name} numberOfLines={1}>
+            <Text
+              style={[styles.name, elemento.completada && textStyle]}
+              numberOfLines={1}
+            >
               {"nombre" in elemento ? elemento.nombre : elemento.titulo}
             </Text>
 
@@ -80,9 +111,15 @@ export const Item = ({
                   {formatDate(elemento.fecha_creacion)}
                 </Text>
               )}
-              {elemento.tipo === "tarea" && elemento.fecha_vencimiento && (
+              {elemento.tipo === "tarea" && (
                 <Text style={[styles.date, styles.dueDate]}>
-                  {formatDate(elemento.fecha_vencimiento)}
+                  {
+                    elemento.isDaily
+                      ? "Frecuencia diaria" // Si es diaria, muestra este texto
+                      : elemento.fecha_vencimiento
+                      ? formatDate(elemento.fecha_vencimiento) // Si no es diaria pero tiene fecha, muéstrala
+                      : "Sin fecha" // Opcional: texto por defecto si no hay fecha
+                  }
                 </Text>
               )}
             </View>
@@ -110,7 +147,7 @@ export const Item = ({
                   <Ionicons
                     name={elemento.completada ? "checkbox" : "square-outline"}
                     size={24}
-                    color={elemento.completada ? "#2D4A53" : "#5A636A"}
+                    color={elemento.completada ? "#2D4A53" : "black"}
                   />
                 </TouchableOpacity>
                 {elemento.completada && (
@@ -195,7 +232,7 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 13,
-    color: "#5A636A",
+    color: "black",
     opacity: 0.8,
   },
   actionsContainer: {

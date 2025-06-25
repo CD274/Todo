@@ -54,6 +54,7 @@ interface TaskProps {
   completada: boolean | null;
   fecha_creacion: string | null;
   fecha_vencimiento: string | null;
+  isDaily?: boolean | null;
   prioridad: "baja" | "media" | "alta" | null;
   subtareas: Subtarea[];
 }
@@ -319,14 +320,30 @@ export const ModalGuardar = (props: Props) => {
                   placeholderTextColor="#999"
                   multiline
                 />
-
+                <View style={styles.priorityContainer}>
+                  <Text style={styles.label}>Repetición diaria:</Text>
+                  <Picker
+                    selectedValue={tarea.isDaily?.toString() ?? "false"}
+                    onValueChange={(value) =>
+                      handleOnChange("isDaily", value === "true")
+                    }
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Desactivada" value="false" />
+                    <Picker.Item label="Activada" value="true" />
+                  </Picker>
+                </View>
                 <View style={styles.dateContainer}>
                   <Text style={styles.label}>Fecha de vencimiento:</Text>
                   <TouchableOpacity
                     onPress={() => setShowDatePicker(true)}
-                    style={styles.dateButton}
+                    style={[
+                      styles.dateButton,
+                      tarea.isDaily && styles.disabledButton,
+                    ]}
+                    disabled={tarea.isDaily}
                   >
-                    <Text>
+                    <Text style={tarea.isDaily && styles.disabledText}>
                       {tarea.fecha_vencimiento
                         ? parseStringToDate(
                             tarea.fecha_vencimiento
@@ -335,7 +352,7 @@ export const ModalGuardar = (props: Props) => {
                     </Text>
                   </TouchableOpacity>
 
-                  {showDatePicker && (
+                  {showDatePicker && !tarea.isDaily && (
                     <DateTimePicker
                       value={parseStringToDate(tarea.fecha_vencimiento)}
                       mode="date"
@@ -364,7 +381,6 @@ export const ModalGuardar = (props: Props) => {
                     <Picker.Item label="Alta" value="alta" />
                   </Picker>
                 </View>
-
                 <View style={styles.subtareasContainer}>
                   <Text style={styles.sectionTitle}>Subtareas</Text>
                   <View>
@@ -445,6 +461,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(13, 31, 35, 0.7)",
+  },
+  disabledButton: {
+    opacity: 0.5,
+    backgroundColor: "#f0f0f0",
+  },
+  disabledText: {
+    color: "#999",
   },
   fixedFooter: {
     paddingTop: 16,

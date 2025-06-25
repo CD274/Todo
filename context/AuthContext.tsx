@@ -1,11 +1,9 @@
 import CustomAlert from "@/Components/CustomAlert";
 import { useDatabase } from "@/context/DatabaseContext";
-import * as schema from "@/db/schema";
-import { grupos, subtareas, tareas, users } from "@/db/schema";
+import { users } from "@/db/schema";
 import { useAlert } from "@/hooks/useAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { eq } from "drizzle-orm";
-import { reset } from "drizzle-seed";
 import React, { ReactNode, createContext, useEffect, useState } from "react";
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
@@ -16,7 +14,7 @@ interface AuthContextProps {
 interface User {
   id: number;
   email: string;
-  password: string;
+  password?: string;
   isActive: number;
 }
 interface AuthContextType {
@@ -34,7 +32,7 @@ interface AuthContextType {
 export const AuhtProvider = ({ children }: AuthContextProps) => {
   const db = useDatabase();
   const { alertConfig, showAlert, hideAlert } = useAlert();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const loadUser = async () => {
@@ -50,7 +48,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
     };
     loadUser();
   }, []);
-  const userPersister = async (userData: any) => {
+  const userPersister = async (userData: User) => {
     try {
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
@@ -61,60 +59,61 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   const clearUser = async () => {
     try {
       await AsyncStorage.removeItem("user");
+      await db.update(users).set({ isActive: 0 }).where(eq(users.id, user.id));
       setUser(null);
     } catch (error) {
       console.error("Error clearing user data:", error);
     }
   };
-  const mostrarBDD = async () => {
-    try {
-      const data = await db
-        .select({
-          // Selección explícita de campos (evita SELECT *)
-          usuario: {
-            id: users.id,
-            email: users.email,
-            isActive: users.isActive,
-          },
-          grupo: {
-            id: grupos.id_grupo,
-            nombre: grupos.nombre,
-            color: grupos.color,
-          },
-          tarea: {
-            id: tareas.id_tarea,
-            titulo: tareas.titulo,
-            prioridad: tareas.prioridad,
-            completada: tareas.completada,
-          },
-          subtarea: {
-            id: subtareas.id_subtarea,
-            titulo: subtareas.titulo,
-            completada: subtareas.completada,
-          },
-        })
-        .from(users)
-        .leftJoin(grupos, eq(grupos.usuario_id, users.id)) // Unión usuario → grupos
-        .leftJoin(tareas, eq(tareas.id_grupo, grupos.id_grupo)) // Unión grupo → tareas
-        .leftJoin(subtareas, eq(subtareas.id_tarea, tareas.id_tarea)) // Unión tarea → subtareas
-        .all();
+  // const mostrarBDD = async () => {
+  //   try {
+  //     const data = await db
+  //       .select({
+  //         // Selección explícita de campos (evita SELECT *)
+  //         usuario: {
+  //           id: users.id,
+  //           email: users.email,
+  //           isActive: users.isActive,
+  //         },
+  //         grupo: {
+  //           id: grupos.id_grupo,
+  //           nombre: grupos.nombre,
+  //           color: grupos.color,
+  //         },
+  //         tarea: {
+  //           id: tareas.id_tarea,
+  //           titulo: tareas.titulo,
+  //           prioridad: tareas.prioridad,
+  //           completada: tareas.completada,
+  //         },
+  //         subtarea: {
+  //           id: subtareas.id_subtarea,
+  //           titulo: subtareas.titulo,
+  //           completada: subtareas.completada,
+  //         },
+  //       })
+  //       .from(users)
+  //       .leftJoin(grupos, eq(grupos.usuario_id, users.id)) // Unión usuario → grupos
+  //       .leftJoin(tareas, eq(tareas.id_grupo, grupos.id_grupo)) // Unión grupo → tareas
+  //       .leftJoin(subtareas, eq(subtareas.id_tarea, tareas.id_tarea)) // Unión tarea → subtareas
+  //       .all();
 
-      console.log(JSON.stringify(data, null, 2)); // Formato legible
-      return data;
-    } catch (error) {
-      console.error("Error en mostrarBDD:", error);
-      throw error; // Propaga el error para manejo externo
-    }
-  };
-  const resetbdd = async () => {
-    try {
-      await AsyncStorage.removeItem("user");
-      await reset(db, schema);
-      setUser(null);
-    } catch (error) {
-      console.error("Error clearing user data:", error);
-    }
-  };
+  //     console.log(JSON.stringify(data, null, 2)); // Formato legible
+  //     return data;
+  //   } catch (error) {
+  //     console.error("Error en mostrarBDD:", error);
+  //     throw error; // Propaga el error para manejo externo
+  //   }
+  // };
+  // const resetbdd = async () => {
+  //   try {
+  //     await AsyncStorage.removeItem("user");
+  //     await reset(db, schema);
+  //     setUser(null);
+  //   } catch (error) {
+  //     console.error("Error clearing user data:", error);
+  //   }
+  // };
   const logout = async () => {
     await clearUser();
     // resetbdd();
@@ -214,7 +213,10 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
         return { success: false };
       }
       showAlert("Éxito", "La acción se completó correctamente", "success");
-      setUser(data.user);
+      await db
+        .update(users)
+        .set({ isActive: 1 })
+        .where(eq(users.id, data.user.id));
       await userPersister(data.user);
       return { success: true };
     } catch (error) {

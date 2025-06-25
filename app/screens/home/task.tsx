@@ -7,7 +7,14 @@ import { useRoute } from "@react-navigation/native";
 import { eq } from "drizzle-orm";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import { Alert, FlatList, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDatabase } from "../../../context/DatabaseContext";
 
@@ -22,6 +29,7 @@ interface TaskProps {
   titulo: string;
   descripcion: string | null;
   completada: boolean | null;
+  isDaily: boolean | null;
   fecha_creacion: string | null;
   fecha_vencimiento: string | null;
   prioridad: "baja" | "media" | "alta" | null;
@@ -63,6 +71,7 @@ const Task = () => {
                 titulo: task.titulo,
                 descripcion: task.descripcion,
                 completada: task.completada,
+                isDaily: task.isDaily,
                 fecha_creacion: task.fecha_creacion,
                 fecha_vencimiento: task.fecha_vencimiento,
                 prioridad: task.prioridad,
@@ -101,6 +110,7 @@ const Task = () => {
             titulo: nuevaTarea.titulo,
             descripcion: nuevaTarea.descripcion,
             completada: nuevaTarea.completada,
+            isDaily: nuevaTarea.isDaily,
             fecha_creacion: nuevaTarea.fecha_creacion,
             fecha_vencimiento: nuevaTarea.fecha_vencimiento,
             prioridad: nuevaTarea.prioridad,
@@ -146,6 +156,7 @@ const Task = () => {
             titulo: tareaActualizada.titulo,
             descripcion: tareaActualizada.descripcion,
             completada: tareaActualizada.completada,
+            isDaily: tareaActualizada.isDaily,
             fecha_vencimiento: tareaActualizada.fecha_vencimiento,
             prioridad: tareaActualizada.prioridad,
           })
@@ -247,7 +258,10 @@ const Task = () => {
     setEditingTask(tarea);
     setModalVisible(true);
   };
-
+  const verTareas = async () => {
+    const result = await db.select().from(tareas).execute();
+    console.log(JSON.stringify(result, null, 2));
+  };
   const renderItem = ({ item }: { item: TaskProps }) => (
     <Item
       elemento={{ ...item, tipo: "tarea" }}
@@ -280,6 +294,9 @@ const Task = () => {
           initialTarea={editingTask}
         />
       </View>
+      <TouchableOpacity onPress={verTareas}>
+        <Text>Ver tareas</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
