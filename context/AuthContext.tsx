@@ -131,7 +131,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   };
   const register = async ({ email, password }: User) => {
     try {
-      const response = await fetch("http://192.168.1.108:3000/register", {
+      const response = await fetch("http://192.168.1.107:3000/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -157,7 +157,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   const validateEmail = async (email: string) => {
     try {
       const response = await fetch(
-        "http://192.168.1.108:3000/forgot-password",
+        "http://192.168.1.107:3000/forgot-password",
         {
           method: "POST",
           headers: {
@@ -179,7 +179,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   };
   const resetPassword = async ({ email, password }: User) => {
     try {
-      const response = await fetch("http://192.168.1.108:3000/reset-password", {
+      const response = await fetch("http://192.168.1.107:3000/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -200,7 +200,7 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   };
   const login = async ({ email, password }: User) => {
     try {
-      const response = await fetch("http://192.168.1.108:3000/login", {
+      const response = await fetch("http://192.168.1.107:3000/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

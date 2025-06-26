@@ -48,7 +48,7 @@ export const Item = ({
     alta: "#f67782",
     media: "#f1e575",
     baja: "#76b8ef",
-    default: "#f0f9ff",
+    default: "#d8e1e7",
   };
 
   const cardBackground =
@@ -77,11 +77,11 @@ export const Item = ({
     fechaVencimiento
   ) {
     if (fechaVencimiento < fechaActual) {
-      colorCard = "#7f9296"; // Rojo claro (atraso)
+      colorCard = "#5f6d73"; // Gris azulado oscuro (atrasado)
     } else if (fechaVencimiento.toDateString() === fechaActual.toDateString()) {
-      colorCard = "#9db7bc"; // Naranja claro (vencimiento hoy)
+      colorCard = "#9db7bc"; // Azul grisáceo medio (hoy)
     } else {
-      colorCard = "#d1e7ed"; // Azul claro (futuro)
+      colorCard = "#d6ecf1"; // Azul muy claro (futuro)
     }
   }
 

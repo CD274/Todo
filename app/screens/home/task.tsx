@@ -7,14 +7,7 @@ import { useRoute } from "@react-navigation/native";
 import { eq } from "drizzle-orm";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import {
-  Alert,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDatabase } from "../../../context/DatabaseContext";
 
@@ -294,9 +287,6 @@ const Task = () => {
           initialTarea={editingTask}
         />
       </View>
-      <TouchableOpacity onPress={verTareas}>
-        <Text>Ver tareas</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
