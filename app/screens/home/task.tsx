@@ -3,7 +3,9 @@ import { Item } from "@/Components/Item";
 import { ModalGuardar } from "@/Components/modal";
 import { subtareas, tareas } from "@/db/schema";
 import { colors } from "@/theme/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRoute } from "@react-navigation/native";
+import { isToday } from "date-fns";
 import { eq } from "drizzle-orm";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
@@ -42,6 +44,9 @@ const Task = () => {
     React.useCallback(() => {
       let isActive = true;
       const loadData = async () => {
+        //Verificar si la fecha de la última ejecución es hoy
+        await executeDailyTasks();
+        //Cargar las tareas
         try {
           const tasks = await db
             .select()
@@ -263,6 +268,36 @@ const Task = () => {
       onComplete={() => HandlecompleteTask(item.id_tarea)}
     />
   );
+  const needsDailyExecution = async () => {
+    const lastExecutionDate = await AsyncStorage.getItem(
+      "@last_execution_date"
+    );
+
+    if (!lastExecutionDate) return true;
+
+    return !isToday(new Date(lastExecutionDate));
+  };
+  const executeDailyTasks = async () => {
+    if (await needsDailyExecution()) {
+      await resetDailyTasks();
+    }
+  };
+  const resetDailyTasks = async () => {
+    try {
+      await db
+        .update(tareas)
+        .set({ completada: false })
+        .where(eq(tareas.isDaily, true))
+        .execute();
+      setData((prev) => prev.map((item) => ({ ...item, completada: false })));
+    } catch (error) {
+      console.error("Error al resetear las tareas diarias:", error);
+    }
+    await AsyncStorage.setItem(
+      "@last_execution_date",
+      new Date().toISOString()
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
