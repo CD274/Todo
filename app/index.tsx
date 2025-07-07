@@ -1,20 +1,17 @@
-import { AuhtProvider } from "@/context/AuthContext";
-import * as NavigationBar from "expo-navigation-bar";
-import { useEffect } from "react";
-import { Platform } from "react-native";
-import { Provider as PaperProvider } from "react-native-paper";
-import RootNavigator from "./navigation/RootNavigator";
-export default function App() {
-  useEffect(() => {
-    if (Platform.OS === "android") {
-      NavigationBar.setButtonStyleAsync("dark");
-    }
-  }, []);
-  return (
-    <PaperProvider>
-      <AuhtProvider>
-        <RootNavigator />
-      </AuhtProvider>
-    </PaperProvider>
+import { useAuth } from "@/context/AuthContext";
+import { Redirect } from "expo-router";
+
+export default function Index() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null; // O muestra un loader
+  }
+
+  return user ? (
+    <Redirect href="/(tabs)/home" />
+  ) : (
+    <Redirect href="/(auth)/login" />
+    // <Redirect href="/(auth)/login" />
   );
 }

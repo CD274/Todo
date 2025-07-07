@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import type { AppRoutes } from "../app/types/routes";
 
 export interface Grupo {
   id_grupo: number;
@@ -85,10 +86,13 @@ export const Item = ({
     }
   }
 
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const goToTasks = (groupId: number, name: string) => {
-    navigation.navigate("Task", { id_group: groupId, nombre: name });
+    router.push({
+      pathname: "/tasks" as keyof AppRoutes,
+      params: { id_group: groupId, nombre: name }
+    });
   };
 
   return (

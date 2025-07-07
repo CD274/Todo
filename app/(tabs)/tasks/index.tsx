@@ -1,5 +1,3 @@
-import { Header } from "@/Components/header";
-import { Item } from "@/Components/Item";
 import { ModalGuardar } from "@/Components/modal";
 import { subtareas, tareas } from "@/db/schema";
 import { colors } from "@/theme/colors";
@@ -11,6 +9,8 @@ import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Header } from "../../../Components/header";
+import { Item } from "../../../Components/Item";
 import { useDatabase } from "../../../context/DatabaseContext";
 
 interface Subtarea {
@@ -34,6 +34,7 @@ interface TaskProps {
 const Task = () => {
   const db = useDatabase();
   const route = useRoute();
+  //Arreglar con el cambio de expo router
   const { id_group, name } = route.params;
   const [isModalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState<TaskProps[]>([]);

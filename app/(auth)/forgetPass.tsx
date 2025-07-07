@@ -1,6 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Modal,
@@ -11,13 +11,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { authStyles } from "../../../styles/authStyles";
+import { authStyles } from "../../styles/authStyles";
 
 const ForgetPass = () => {
   const [email, setEmail] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [ismodalVisible, setModalVisible] = useState(false);
-  const navigation = useNavigation();
+  const navigation = useRouter();
   const { validateEmail, resetPassword } = useAuth();
   const handleForgetPass = async () => {
     try {
@@ -46,7 +46,7 @@ const ForgetPass = () => {
       {/* Barra de navegación superior */}
       <View style={authStyles.navBar}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.back()}
           style={authStyles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#AFB3B7" />
@@ -76,7 +76,7 @@ const ForgetPass = () => {
 
         <View style={authStyles.linksContainer}>
           <TouchableOpacity
-            onPress={() => navigation.navigate("Login")}
+            onPress={() => navigation.navigate("/(auth)/login")}
             activeOpacity={0.7}
           >
             <Text style={authStyles.linkText}>Volver al inicio de sesión</Text>

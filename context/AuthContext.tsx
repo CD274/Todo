@@ -1,35 +1,40 @@
-import CustomAlert from "@/Components/CustomAlert";
-import { useDatabase } from "@/context/DatabaseContext";
-import { users } from "@/db/schema";
+import { useRouter } from 'expo-router';
+import { useDatabase } from "./DatabaseContext";
 import { useAlert } from "@/hooks/useAlert";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { eq } from "drizzle-orm";
+import { users } from "@/db/schema";
 import React, { ReactNode, createContext, useEffect, useState } from "react";
+import CustomAlert from "@/Components/CustomAlert";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { and, eq } from "drizzle-orm";
+
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
+
 interface AuthContextProps {
   children: ReactNode;
 }
+
 interface User {
   id: number;
   email: string;
   password?: string;
   isActive: number;
 }
+
 interface AuthContextType {
-  user: any; // puedes mejorar esto después
-  setUser: React.Dispatch<React.SetStateAction<any>>;
+  user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  register: ({ email, password }: User) => Promise<any>; // o Promise<ResponseData>
-  login: ({ email, password }: User) => Promise<any>; // o Promise<ResponseData>
+  register: ({ email, password }: User) => Promise<User>;
+  login: ({ email, password }: User) => Promise<User>;
   logout: () => Promise<void>;
-  validateEmail: (email: string) => Promise<any>;
-  resetPassword: ({ email, password }: User) => Promise<any>;
+  validateEmail: (email: string) => Promise<void>;
+  resetPassword: ({ email, password }: User) => Promise<void>;
 }
 
-export const AuhtProvider = ({ children }: AuthContextProps) => {
+export const AuthProvider = ({ children }: AuthContextProps) => {
   const db = useDatabase();
   const { alertConfig, showAlert, hideAlert } = useAlert();
   const [user, setUser] = useState<User | null>(null);
@@ -38,18 +43,45 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
     const loadUser = async () => {
       try {
         const userdata = await AsyncStorage.getItem("user");
+        
         if (userdata) {
-          setUser(JSON.parse(userdata));
+          const parsedUser = JSON.parse(userdata);
+          
+          // Verifica en la base de datos si el usuario sigue activo
+          const [dbUser] = await db.select()
+            .from(users)
+            .where(
+              eq(users.id, parsedUser.id)
+            ).limit(1);
+  
+          if (dbUser && dbUser.isActive === 1) {
+            // Actualizar el usuario en AsyncStorage con los datos más recientes
+            await AsyncStorage.setItem("user", JSON.stringify(dbUser));
+            setUser(dbUser);
+          } else {
+            await AsyncStorage.removeItem("user");
+            setUser(null);
+          }
         }
-        setLoading(false);
       } catch (error) {
-        console.log(error);
+        console.error("Error loading user:", error);
+        await AsyncStorage.removeItem("user"); // Limpia en caso de error
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
+    
     loadUser();
-  }, []);
+  }, [db]);
   const userPersister = async (userData: User) => {
     try {
+      // Primero activamos el usuario en la base de datos
+      await db.update(users)
+        .set({ isActive: 1 })
+        .where(eq(users.id, userData.id));
+
+      // Luego guardamos en AsyncStorage
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
     } catch (error) {
@@ -59,65 +91,19 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
   const clearUser = async () => {
     try {
       await AsyncStorage.removeItem("user");
-      await db.update(users).set({ isActive: 0 }).where(eq(users.id, user.id));
+      if (user && user.id) {
+        await db.update(users).set({ isActive: 0 }).where(eq(users.id, user.id));
+      }
       setUser(null);
+      
     } catch (error) {
       console.error("Error clearing user data:", error);
     }
   };
-  // const mostrarBDD = async () => {
-  //   try {
-  //     const data = await db
-  //       .select({
-  //         // Selección explícita de campos (evita SELECT *)
-  //         usuario: {
-  //           id: users.id,
-  //           email: users.email,
-  //           isActive: users.isActive,
-  //         },
-  //         grupo: {
-  //           id: grupos.id_grupo,
-  //           nombre: grupos.nombre,
-  //           color: grupos.color,
-  //         },
-  //         tarea: {
-  //           id: tareas.id_tarea,
-  //           titulo: tareas.titulo,
-  //           prioridad: tareas.prioridad,
-  //           completada: tareas.completada,
-  //         },
-  //         subtarea: {
-  //           id: subtareas.id_subtarea,
-  //           titulo: subtareas.titulo,
-  //           completada: subtareas.completada,
-  //         },
-  //       })
-  //       .from(users)
-  //       .leftJoin(grupos, eq(grupos.usuario_id, users.id)) // Unión usuario → grupos
-  //       .leftJoin(tareas, eq(tareas.id_grupo, grupos.id_grupo)) // Unión grupo → tareas
-  //       .leftJoin(subtareas, eq(subtareas.id_tarea, tareas.id_tarea)) // Unión tarea → subtareas
-  //       .all();
-
-  //     console.log(JSON.stringify(data, null, 2)); // Formato legible
-  //     return data;
-  //   } catch (error) {
-  //     console.error("Error en mostrarBDD:", error);
-  //     throw error; // Propaga el error para manejo externo
-  //   }
-  // };
-  // const resetbdd = async () => {
-  //   try {
-  //     await AsyncStorage.removeItem("user");
-  //     await reset(db, schema);
-  //     setUser(null);
-  //   } catch (error) {
-  //     console.error("Error clearing user data:", error);
-  //   }
-  // };
+  const router = useRouter();
   const logout = async () => {
     await clearUser();
-    // resetbdd();
-    // mostrarBDD();
+    router.replace("/(auth)/login");
   };
   const localRegister = async (id: number, email: string) => {
     try {
@@ -208,20 +194,47 @@ export const AuhtProvider = ({ children }: AuthContextProps) => {
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
+      
       if (!response.ok) {
         showAlert("Error", "Credenciales incorrectas", "error");
-        return { success: false };
+        return null;
       }
-      showAlert("Éxito", "La acción se completó correctamente", "success");
-      await db
-        .update(users)
-        .set({ isActive: 1 })
-        .where(eq(users.id, data.user.id));
-      await userPersister(data.user);
-      return { success: true };
+
+      // Verificar si el usuario existe en la base de datos local
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      
+      if (user) {
+        // Actualizar el estado del usuario a activo
+        await db.update(users)
+          .set({ isActive: 1 })
+          .where(eq(users.id, user.id));
+        
+        // Persistir los datos del usuario en AsyncStorage
+        await userPersister({
+          id: user.id,
+          email: user.email,
+          isActive: 1
+        });
+        
+        // Actualizar el estado del usuario en el contexto
+        setUser({
+          id: user.id,
+          email: user.email,
+          isActive: 1
+        });
+        
+        return {
+          id: user.id,
+          email: user.email,
+          isActive: 1
+        };
+      }
+      
+      return null;
     } catch (error) {
-      showAlert("Error", "Error de conexión", "error");
+      showAlert("Error", "Ocurrió un error inesperado", "error");
       console.log(error);
+      return null;
     }
   };
   return (

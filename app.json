@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ToDo2",
-    "slug": "ToDo2",
+    "name": "ToDoDefinitivo",
+    "slug": "ToDoDefinitivo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "todo2",
+    "scheme": "tododefinitivo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -14,9 +14,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.cd274.ToDoDefinitivo"
     },
     "web": {
       "bundler": "metro",
@@ -38,6 +39,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6a1e7f88-cec3-4ed7-9d82-6ffb3019df72"
+      }
+    },
+    "owner": "cd274"
   }
 }

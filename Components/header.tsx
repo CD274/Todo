@@ -20,7 +20,7 @@ export const Header = ({ handleModal, tipo }: HeaderProps) => {
   const navigation = useNavigation();
 
   const handleGoBack = () => {
-    navigation.navigate("Home");
+    navigation.goBack();
   };
 
   const handleLogout = () => {
