@@ -97,11 +97,9 @@ app.post("/register", validateData, async (req, res) => {
       db.get(sqlSelect, [newUserId], (err, row) => {
         if (err) {
           console.error("Error fetching new user:", err);
-          return res
-            .status(500)
-            .json({
-              error: "Registration successful but failed to retrieve user data",
-            });
+          return res.status(500).json({
+            error: "Registration successful but failed to retrieve user data",
+          });
         }
 
         console.log(`A new user has been registered with ID: ${newUserId}`);
@@ -134,7 +132,10 @@ app.post("/login", validateData, (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    res.json({ success: "Login successful", user: { email: user.email } });
+    res.json({
+      success: "Login successful",
+      user: { id: user.id, email: user.email },
+    });
   });
 });
 app.post("/forgot-password", (req, res) => {
