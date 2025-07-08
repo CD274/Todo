@@ -185,6 +185,6 @@ app.get("/reset-base", (req, res) => {
     res.json({ success: "Database reset successful" });
   });
 });
-app.listen(3000, () => {
+app.listen(3000, "0.0.0.0", () => {
   console.log("Server is running on port 3000");
 });
